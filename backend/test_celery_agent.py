@@ -15,7 +15,7 @@ def run_celery_test():
     admin_user, _ = User.objects.get_or_create(username="admin", defaults={'email': 'admin@syncflow.ai'})
     brand, _ = Brand.objects.get_or_create(id=1, defaults={'name': 'Nike', 'owner': admin_user})
     social, _ = SocialAccount.objects.get_or_create(platform_name="Instagram", account_id="NikeIG", brand=brand)
-    agent, _ = Agent.objects.get_or_create(name="Nike Community Manager", agent_type="engagement", brand=brand, defaults={'social_account': social})
+    agent, _ = Agent.objects.get_or_create(name="Nike Community Manager", agent_type="engagement", brand=brand)
 
     # 2. Create the AgentTask object
     task = AgentTask.objects.create(
