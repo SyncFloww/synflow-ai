@@ -1,24 +1,28 @@
 from core.llm_agents.agent import SyncflowAgent
 from core.llm_agents.base import DummyLLM
+import json
 
 def run_test():
 
     llm = DummyLLM()
     agent = SyncflowAgent(llm)
 
-    # Core required tests from March 14 payload
     tests = [
-        "Write a reply thanking a new follower",
-        "Create a caption promoting a new product",
-        "Analyze this comment sentiment:\n\"I hate this service\""
+        ("Write a reply to this comment: 'Love the new sneakers'", "Nike"),
+        ("Send a welcoming DM to the new follower", "Nike"),
+        ("Analyze this review: 'Your service is terrible'", "Syncflow Support")
     ]
 
-    for i, test_input in enumerate(tests, 1):
-        print(f"\n{'='*15} TEST {i} {'='*15}")
-        print(f"Input:\n{test_input}\n")
-        result = agent.run(test_input)
-        print("Expected Output Format:")
-        print(result)
+    print("========= PRODUCTION AGENT TEST =========")
+    for user_input, brand in tests:
+        print(f"\n--- Processing for Brand: {brand} ---")
+        print(f"Input: {user_input}")
+        
+        result = agent.run(user_input, brand=brand)
+        
+        print(f"Agent Memory Size: {len(agent.memory.history)}")
+        print("Final Output:")
+        print(json.dumps(result, indent=2))
 
 if __name__ == "__main__":
     run_test()
