@@ -44,6 +44,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         style={"input_type": "password"},
     )
 
+    # Alias used by some frontends
+    password_confirm = serializers.CharField(
+        write_only=True,
+        required=False,
+        style={"input_type": "password"},
+    )
+
     referral_code = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -58,6 +65,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "email",
             "password",
             "confirm_password",
+            "password_confirm",
             "referral_code",
         )
 
@@ -72,6 +80,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        # Map password_confirm -> confirm_password if needed.
+        if "confirm_password" not in attrs and "password_confirm" in attrs:
+            attrs["confirm_password"] = attrs["password_confirm"]
+
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError(
                 {
@@ -85,16 +97,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        # Drop fields not on the User model
+        validated_data.pop("confirm_password", None)
+        validated_data.pop("password_confirm", None)
+
         referral = validated_data.pop("referral_code", "").strip()
-        validated_data.pop("confirm_password")
 
         referred_by = None
 
         if referral:
             try:
-                referred_by = User.objects.get(
-                    referral_code=referral
-                )
+                referred_by = User.objects.get(referral_code=referral)
             except User.DoesNotExist:
                 raise serializers.ValidationError(
                     {
@@ -113,9 +126,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         while True:
             code = generate_referral_code()
 
-            if not User.objects.filter(
-                referral_code=code
-            ).exists():
+            if not User.objects.filter(referral_code=code).exists():
                 user.referral_code = code
                 break
 
@@ -172,8 +183,8 @@ class LoginSerializer(serializers.Serializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
-        
-        
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
 
@@ -195,7 +206,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "is_verified",
             "date_joined",
         )
-        
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(
@@ -217,15 +228,20 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context["request"].user
 
         if not user.check_password(attrs["old_password"]):
-            raise serializers.ValidationError({
-                "old_password": "Old password is incorrect."
-            })
+            raise serializers.ValidationError(
+                {
+                    "old_password": "Old password is incorrect."
+                }
+            )
 
         if attrs["new_password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError({
-                "confirm_password": "Passwords do not match."
-            })
+            raise serializers.ValidationError(
+                {
+                    "confirm_password": "Passwords do not match."
+                }
+            )
 
         validate_password(attrs["new_password"])
 
         return attrs
+
