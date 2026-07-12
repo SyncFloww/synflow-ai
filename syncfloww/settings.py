@@ -78,12 +78,22 @@ WSGI_APPLICATION = 'syncfloww.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Database
+# On Vercel, the filesystem may be read-only / non-writable; sqlite file paths often fail.
+# Use DATABASE_URL when provided, otherwise fall back to an in-memory sqlite DB.
+# For local dev we keep the sqlite file in the project.
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        default=(
+            # If running on Vercel, avoid sqlite file path issues.
+            "sqlite:///:memory:"
+            if ('VERCEL' in os.environ or os.environ.get('VERCEL') == '1')
+            else f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+        ),
         conn_max_age=600,
     )
 }
+
 
 
 # Password validation
