@@ -7,6 +7,20 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .utils import generate_referral_code
 from .validators import validate_password_strength
+from google.auth.transport import requests
+from google.oauth2 import id_token
+
+from rest_framework import serializers
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate_token(self, value):
+        if not value:
+            raise serializers.ValidationError("Google token is required.")
+
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -289,3 +303,6 @@ class ReferralStatsSerializer(serializers.ModelSerializer):
 
     def get_referred_by_email(self, obj):
         return obj.referred_by.email if obj.referred_by else None
+
+class GoogleLoginSerializer(serializers.Serializer):
+    token = serializers.CharField()

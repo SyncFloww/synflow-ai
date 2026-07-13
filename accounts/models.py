@@ -1,5 +1,5 @@
 import uuid
-
+from .models import User
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -81,3 +81,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+    
+    
+class GoogleAuthService:
+
+    @staticmethod
+    def authenticate(token):
+        payload = GoogleAuthService.verify_google_token(token)
+
+        if payload is None:
+            raise ValueError("Invalid Google token.")
+
+        email = payload["email"]
+
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                "first_name": payload.get("given_name", ""),
+                "last_name": payload.get("family_name", ""),
+            },
+        )
+
+        return user

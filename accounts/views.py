@@ -6,6 +6,8 @@ from rest_framework.permissions import (
 from .services import (
     TokenService,
     UserService,
+    GoogleAuthService,
+    TokenService
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,6 +16,7 @@ from .serializers import (
     LoginSerializer,
     UserSerializer,
     ReferralStatsSerializer,
+    GoogleLoginSerializer
 )
 from .serializers import (
     ProfileSerializer,
@@ -221,4 +224,38 @@ class ValidateReferralCodeAPIView(APIView):
             return Response(
                 {"valid": False, "detail": "Invalid referral code."},
                 status=status.HTTP_404_NOT_FOUND,
-            )
+            )
+
+
+class GoogleLoginAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = GoogleLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            user = GoogleAuthService.authenticate(
+                serializer.validated_data["token"]
+            )
+
+        except ValueError as e:
+            return Response(
+                {
+                    "success": False,
+                    "message": str(e),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tokens = TokenService.create_tokens(user)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Google login successful.",
+                "user": UserSerializer(user).data,
+                "tokens": tokens,
+            }
+        )

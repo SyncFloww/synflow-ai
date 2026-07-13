@@ -3,17 +3,11 @@ import os
 import dj_database_url
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
+SITE_ID = 1
 SECRET_KEY = 'django-insecure-!zt!n+c@76sbw-sc$)*&vb_d_sg3o=e+skk4^)bbk&au*jdll%'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = [
@@ -23,9 +17,6 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
-
-# Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -33,15 +24,27 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "django.contrib.sites",
+    
     
     # Third-party apps
     'drf_spectacular',
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "rest_framework.authtoken",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.facebook",
     
     #my apps
     'accounts',
+
 ]
 
 MIDDLEWARE = [
@@ -50,6 +53,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -74,14 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'syncfloww.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-# Database
-# On Vercel, the filesystem may be read-only / non-writable; sqlite file paths often fail.
-# Use DATABASE_URL when provided, otherwise fall back to an in-memory sqlite DB.
-# For local dev we keep the sqlite file in the project.
 DATABASES = {
     "default": dj_database_url.config(
         default=(
@@ -178,3 +175,23 @@ CRON_SECRET = os.getenv(
     "CRON_SECRET",
     "change-this-secret"
 )
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+# Social Auth Settings loaded via decouple config
+try:
+    from decouple import config
+except ImportError:
+    config = os.getenv
+
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
+FACEBOOK_APP_ID = config("FACEBOOK_APP_ID", default="")
+FACEBOOK_APP_SECRET = config("FACEBOOK_APP_SECRET", default="")
+
+# Alias for accounts.services.GoogleAuthService
+GOOGLE_OAUTH2_CLIENT_ID = GOOGLE_CLIENT_ID
+
