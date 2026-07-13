@@ -5,7 +5,9 @@ from .views import (
     LogoutAPIView,
     CurrentUserAPIView,
     ProfileAPIView,
-    ChangePasswordAPIView
+    ChangePasswordAPIView,
+    ReferralStatsAPIView,
+    ValidateReferralCodeAPIView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -55,5 +57,18 @@ urlpatterns = [
         "refresh/",
         TokenRefreshView.as_view(),
         name="token-refresh",
+    ),
+
+    # Referral system
+    path(
+        "referral/stats/",
+        ReferralStatsAPIView.as_view(),
+        name="referral-stats",
+    ),
+
+    path(
+        "referral/validate/",
+        ValidateReferralCodeAPIView.as_view(),
+        name="referral-validate",
     ),
 ]

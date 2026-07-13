@@ -13,11 +13,13 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     UserSerializer,
+    ReferralStatsSerializer,
 )
 from .serializers import (
     ProfileSerializer,
     ChangePasswordSerializer,
 )
+from .models import User
 
 class RegisterAPIView(APIView):
 
@@ -175,3 +177,48 @@ class ChangePasswordAPIView(APIView):
             "success": True,
             "message": "Password updated successfully."
         })
+
+
+class ReferralStatsAPIView(APIView):
+    """Return the authenticated user's referral stats and dashboard data."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = ReferralStatsSerializer(
+            request.user,
+            context={"request": request},
+        )
+        return Response({
+            "success": True,
+            "data": serializer.data,
+        })
+
+
+class ValidateReferralCodeAPIView(APIView):
+    """Validate a referral code without requiring authentication.
+    Used during signup so the frontend can give instant feedback.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        code = request.query_params.get("code", "").strip()
+
+        if not code:
+            return Response(
+                {"valid": False, "detail": "No code provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            referrer = User.objects.get(referral_code=code)
+            return Response({
+                "valid": True,
+                "referrer_name": referrer.first_name or referrer.email.split("@")[0],
+            })
+        except User.DoesNotExist:
+            return Response(
+                {"valid": False, "detail": "Invalid referral code."},
+                status=status.HTTP_404_NOT_FOUND,
+            )

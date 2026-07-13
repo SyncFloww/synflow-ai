@@ -33,6 +33,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """Registration serializer.
+
+    Expected payload:
+    - first_name
+    - last_name
+    - email
+    - password
+    - confirm_password  (primary field)
+    - referral_code     (optional)
+    """
+
     password = serializers.CharField(
         write_only=True,
         min_length=8,
@@ -41,13 +52,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     confirm_password = serializers.CharField(
         write_only=True,
-        style={"input_type": "password"},
-    )
-
-    # Alias used by some frontends
-    password_confirm = serializers.CharField(
-        write_only=True,
-        required=False,
         style={"input_type": "password"},
     )
 
@@ -65,7 +69,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             "email",
             "password",
             "confirm_password",
-            "password_confirm",
             "referral_code",
         )
 
@@ -80,10 +83,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # Map password_confirm -> confirm_password if needed.
-        if "confirm_password" not in attrs and "password_confirm" in attrs:
-            attrs["confirm_password"] = attrs["password_confirm"]
-
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError(
                 {
@@ -245,3 +244,48 @@ class ChangePasswordSerializer(serializers.Serializer):
 
         return attrs
 
+
+
+class ReferralStatsSerializer(serializers.ModelSerializer):
+    """Returns the authenticated user's referral stats."""
+
+    referral_link = serializers.SerializerMethodField()
+    total_referrals = serializers.SerializerMethodField()
+    referrals = serializers.SerializerMethodField()
+    referred_by_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            "referral_code",
+            "referral_link",
+            "total_referrals",
+            "referrals",
+            "referred_by_email",
+        )
+
+    def get_referral_link(self, obj):
+        request = self.context.get("request")
+        base = "https://syncfloww.com"
+        if request:
+            scheme = request.scheme
+            host = request.get_host()
+            base = f"{scheme}://{host}"
+        return f"{base}/auth?mode=signup&ref={obj.referral_code}" if obj.referral_code else None
+
+    def get_total_referrals(self, obj):
+        return obj.referrals.count()
+
+    def get_referrals(self, obj):
+        return [
+            {
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "date_joined": u.date_joined,
+            }
+            for u in obj.referrals.order_by("-date_joined")[:50]
+        ]
+
+    def get_referred_by_email(self, obj):
+        return obj.referred_by.email if obj.referred_by else None
