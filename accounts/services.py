@@ -57,8 +57,8 @@ class GoogleAuthService:
             raise ValueError("Invalid Google token.")
             
         email = payload.get("email")
-        if not email:
-            raise ValueError("Google token does not contain an email.")
+        if not email or not payload.get("email_verified"):
+            raise ValueError("Google token does not contain a verified email.")
             
         email = email.lower()
         given_name = payload.get("given_name", "")
@@ -89,4 +89,4 @@ class GoogleAuthService:
             user.is_verified = True
             user.save()
             
-        return user
+        return user

@@ -1,4 +1,5 @@
 from rest_framework import status
+from django.conf import settings
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -7,7 +8,6 @@ from .services import (
     TokenService,
     UserService,
     GoogleAuthService,
-    TokenService
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -238,6 +238,11 @@ class GoogleLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        if not settings.GOOGLE_OAUTH2_CLIENT_ID:
+            return Response(
+                {"success": False, "message": "Google sign-in is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         serializer = GoogleLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

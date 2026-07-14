@@ -12,6 +12,7 @@ from .views import (
     PasswordResetRequestAPIView,
     PasswordResetConfirmAPIView,
     DeleteAccountAPIView,
+    GoogleLoginAPIView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -31,6 +32,12 @@ urlpatterns = [
         "login/",
         LoginAPIView.as_view(),
         name="login",
+    ),
+
+    path(
+        "google/",
+        GoogleLoginAPIView.as_view(),
+        name="google-login",
     ),
 
     path(
