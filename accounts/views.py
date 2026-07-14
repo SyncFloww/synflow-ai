@@ -237,6 +237,15 @@ class GoogleLoginAPIView(APIView):
 
     permission_classes = [AllowAny]
 
+    def get(self, request):
+        """Expose only the public OAuth client ID needed by Google Identity Services."""
+        if not settings.GOOGLE_OAUTH2_CLIENT_ID:
+            return Response(
+                {"message": "Google sign-in is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"client_id": settings.GOOGLE_OAUTH2_CLIENT_ID})
+
     def post(self, request):
         if not settings.GOOGLE_OAUTH2_CLIENT_ID:
             return Response(
