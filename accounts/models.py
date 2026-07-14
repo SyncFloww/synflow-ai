@@ -1,5 +1,9 @@
 import uuid
-from .models import User
+import hashlib
+import secrets
+from datetime import timedelta
+from django.conf import settings
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -81,25 +85,60 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
-    
-    
-class GoogleAuthService:
 
-    @staticmethod
-    def authenticate(token):
-        payload = GoogleAuthService.verify_google_token(token)
 
-        if payload is None:
-            raise ValueError("Invalid Google token.")
+class Profile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    avatar = models.ImageField(upload_to="avatars/", blank=True)
+    timezone = models.CharField(max_length=64, default="UTC")
+    language = models.CharField(max_length=10, default="en")
+    theme = models.CharField(max_length=16, default="system")
+    updated_at = models.DateTimeField(auto_now=True)
 
-        email = payload["email"]
 
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                "first_name": payload.get("given_name", ""),
-                "last_name": payload.get("family_name", ""),
-            },
+class ExpiringToken(models.Model):
+    """Stores only a hash; the raw one-time token is never persisted."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def issue(cls, user, lifetime=timedelta(hours=24)):
+        raw_token = secrets.token_urlsafe(32)
+        instance = cls.objects.create(
+            user=user,
+            token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+            expires_at=timezone.now() + lifetime,
         )
+        return instance, raw_token
 
-        return user
+    @classmethod
+    def consume(cls, raw_token):
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        instance = cls.objects.filter(token_hash=token_hash, used_at__isnull=True, expires_at__gt=timezone.now()).first()
+        if not instance:
+            return None
+        instance.used_at = timezone.now()
+        instance.save(update_fields=["used_at"])
+        return instance
+
+
+class EmailVerification(ExpiringToken):
+    pass
+
+
+class PasswordReset(ExpiringToken):
+    pass
+
+
+class UserDevice(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="devices")
+    name = models.CharField(max_length=128, blank=True)
+    user_agent = models.TextField(blank=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)

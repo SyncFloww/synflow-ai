@@ -8,6 +8,10 @@ from .views import (
     ChangePasswordAPIView,
     ReferralStatsAPIView,
     ValidateReferralCodeAPIView,
+    VerifyEmailAPIView,
+    PasswordResetRequestAPIView,
+    PasswordResetConfirmAPIView,
+    DeleteAccountAPIView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -71,4 +75,8 @@ urlpatterns = [
         ValidateReferralCodeAPIView.as_view(),
         name="referral-validate",
     ),
+    path("verify-email/", VerifyEmailAPIView.as_view(), name="verify-email"),
+    path("password-reset/", PasswordResetRequestAPIView.as_view(), name="password-reset"),
+    path("password-reset/confirm/", PasswordResetConfirmAPIView.as_view(), name="password-reset-confirm"),
+    path("account/", DeleteAccountAPIView.as_view(), name="delete-account"),
 ]

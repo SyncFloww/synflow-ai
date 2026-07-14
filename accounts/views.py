@@ -23,6 +23,10 @@ from .serializers import (
     ChangePasswordSerializer,
 )
 from .models import User
+from .models import EmailVerification, PasswordReset
+from .serializers import TokenSerializer, PasswordResetConfirmSerializer
+from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
 
 class RegisterAPIView(APIView):
 
@@ -37,6 +41,8 @@ class RegisterAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         user = serializer.save()
+
+        EmailVerification.issue(user)
 
         tokens = TokenService.create_tokens(user)
 
@@ -259,3 +265,55 @@ class GoogleLoginAPIView(APIView):
                 "tokens": tokens,
             }
         )
+
+
+class VerifyEmailAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = TokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        verification = EmailVerification.consume(serializer.validated_data["token"])
+        if not verification:
+            return Response({"detail": "This verification link is invalid or expired."}, status=status.HTTP_400_BAD_REQUEST)
+        verification.user.is_verified = True
+        verification.user.save(update_fields=["is_verified"])
+        return Response({"success": True, "message": "Email verified successfully."})
+
+
+class PasswordResetRequestAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email", "").strip().lower()
+        if email:
+            user = User.objects.filter(email=email, is_active=True).first()
+            if user:
+                PasswordReset.issue(user)
+        # Do not disclose whether an account exists.
+        return Response({"success": True, "message": "If that email exists, a reset link has been sent."})
+
+
+class PasswordResetConfirmAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reset = PasswordReset.consume(serializer.validated_data["token"])
+        if not reset:
+            return Response({"detail": "This reset link is invalid or expired."}, status=status.HTTP_400_BAD_REQUEST)
+        reset.user.set_password(serializer.validated_data["new_password"])
+        reset.user.save(update_fields=["password"])
+        return Response({"success": True, "message": "Password reset successfully."})
+
+
+class DeleteAccountAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        password = request.data.get("password")
+        if not password or not request.user.check_password(password):
+            return Response({"password": ["Your password is required to delete the account."]}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.facebook",
     
     #my apps
-    'accounts',
+    'accounts.apps.AccountsConfig',
+    'workspaces',
+    'brands',
 
 ]
 

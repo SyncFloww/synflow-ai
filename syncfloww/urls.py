@@ -13,6 +13,8 @@ urlpatterns = [
     
     # my urls
     path('api/auth/', include('accounts.urls', namespace='accounts')),
+    path('api/v1/workspaces/', include('workspaces.urls')),
+    path('api/v1/brands/', include('brands.urls')),
 
     # OpenAPI schema
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

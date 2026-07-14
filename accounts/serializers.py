@@ -13,8 +13,19 @@ from google.oauth2 import id_token
 from rest_framework import serializers
 
 
-class GoogleLoginSerializer(serializers.Serializer):
+class TokenSerializer(serializers.Serializer):
     token = serializers.CharField()
+
+
+class PasswordResetConfirmSerializer(TokenSerializer):
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        validate_password(attrs["new_password"])
+        return attrs
 
     def validate_token(self, value):
         if not value:
