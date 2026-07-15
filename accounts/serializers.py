@@ -317,3 +317,7 @@ class ReferralStatsSerializer(serializers.ModelSerializer):
 
 class GoogleLoginSerializer(serializers.Serializer):
     token = serializers.CharField()
+
+
+class FacebookLoginSerializer(serializers.Serializer):
+    access_token = serializers.CharField()

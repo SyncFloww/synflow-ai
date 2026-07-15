@@ -8,6 +8,7 @@ from .services import (
     TokenService,
     UserService,
     GoogleAuthService,
+    FacebookAuthService,
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +17,8 @@ from .serializers import (
     LoginSerializer,
     UserSerializer,
     ReferralStatsSerializer,
-    GoogleLoginSerializer
+    GoogleLoginSerializer,
+    FacebookLoginSerializer,
 )
 from .serializers import (
     ProfileSerializer,
@@ -277,6 +279,44 @@ class GoogleLoginAPIView(APIView):
                 "message": "Google login successful.",
                 "user": UserSerializer(user).data,
                 "tokens": tokens,
+            }
+        )
+
+
+class FacebookLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        if not settings.FACEBOOK_APP_ID or not settings.FACEBOOK_APP_SECRET:
+            return Response(
+                {"message": "Facebook sign-in is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"app_id": settings.FACEBOOK_APP_ID})
+
+    def post(self, request):
+        if not settings.FACEBOOK_APP_ID or not settings.FACEBOOK_APP_SECRET:
+            return Response(
+                {"success": False, "message": "Facebook sign-in is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        serializer = FacebookLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = FacebookAuthService.authenticate(serializer.validated_data["access_token"])
+        except ValueError as exc:
+            return Response(
+                {"success": False, "message": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Facebook login successful.",
+                "user": UserSerializer(user).data,
+                "tokens": TokenService.create_tokens(user),
             }
         )
 
