@@ -46,6 +46,10 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'workspaces',
     'brands',
+    'core',
+    'social_accounts',
+    'content_ai',
+    'content',
 
 ]
 
