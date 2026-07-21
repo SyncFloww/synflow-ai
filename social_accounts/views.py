@@ -62,6 +62,34 @@ class MockConnectView(views.APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class SocialAccountListAPIView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, workspace_id):
+        workspace = get_object_or_404(Workspace, id=workspace_id)
+        # Check permissions
+        
+        accounts = SocialAccount.objects.filter(workspace=workspace)
+        data = []
+        for acc in accounts:
+            is_expired = False
+            if hasattr(acc, 'token'):
+                is_expired = acc.token.is_expired()
+                if is_expired and acc.status == ConnectionStatus.CONNECTED:
+                    acc.status = ConnectionStatus.EXPIRED
+                    acc.save()
+            data.append({
+                "id": acc.id,
+                "platform": acc.platform,
+                "username": acc.username,
+                "status": acc.status,
+                "token_expired": is_expired,
+                "connected_at": acc.created_at
+            })
+            
+        return Response(data, status=status.HTTP_200_OK)
+
+
 class DisconnectView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 

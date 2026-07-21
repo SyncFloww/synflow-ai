@@ -51,9 +51,11 @@ class Content(models.Model):
         APPROVED = "approved", "Approved"
         SCHEDULED = "scheduled", "Scheduled"
         PUBLISHED = "published", "Published"
+        ARCHIVED = "archived", "Archived"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="contents")
+    brand = models.ForeignKey('brands.Brand', on_delete=models.SET_NULL, null=True, blank=True, related_name="contents")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="authored_contents")
     folder = models.ForeignKey(ContentFolder, on_delete=models.SET_NULL, null=True, blank=True, related_name="contents")
     tags = models.ManyToManyField(ContentTag, blank=True)
@@ -61,6 +63,7 @@ class Content(models.Model):
     
     title = models.CharField(max_length=255, blank=True)
     text_content = models.TextField(blank=True) # Current active text
+    content_type = models.CharField(max_length=50, blank=True, help_text="e.g., Post, Article, Thread")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     
     created_at = models.DateTimeField(auto_now_add=True)

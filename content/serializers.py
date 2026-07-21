@@ -20,7 +20,7 @@ class ContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
         fields = [
-            'id', 'workspace', 'author', 'folder', 'tags', 'media_assets',
-            'title', 'text_content', 'status', 'created_at', 'updated_at', 'versions'
+            'id', 'workspace', 'brand', 'author', 'folder', 'tags', 'media_assets',
+            'title', 'text_content', 'content_type', 'status', 'created_at', 'updated_at', 'versions'
         ]
         read_only_fields = ['workspace', 'author']

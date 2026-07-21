@@ -47,7 +47,18 @@ class AIService:
             return generated_text
             
         except Exception as e:
-            # Here we might log to the ErrorLog later
+            # Log to ErrorLog
+            try:
+                from observability.models import ErrorLog
+                ErrorLog.objects.create(
+                    workspace=generation.workspace,
+                    module="content_ai",
+                    error_message=str(e),
+                    context={"generation_id": str(generation.id), "provider": provider_string}
+                )
+            except ImportError:
+                pass
+                
             latency_ms = int((time.time() - start_time) * 1000)
             GenerationHistory.objects.create(
                 generation=generation,

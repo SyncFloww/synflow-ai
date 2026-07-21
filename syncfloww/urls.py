@@ -18,6 +18,8 @@ urlpatterns = [
     path('api/v1/social/', include('social_accounts.urls')),
     path('api/v1/ai/', include('content_ai.urls')),
     path('api/v1/content/', include('content.urls')),
+    path('api/v1/posts/', include('publishing.urls')),
+    path('api/v1/activity-logs/', include('observability.urls')),
 
     # OpenAPI schema
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
