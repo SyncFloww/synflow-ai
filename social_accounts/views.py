@@ -4,6 +4,7 @@ from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from workspaces.models import Workspace
+from workspaces.permissions import member_for
 from .models import SocialAccount, OAuthToken, Platform, ConnectionStatus
 from .providers import MockOAuthProvider
 
@@ -16,7 +17,8 @@ class MockConnectView(views.APIView):
         exchange it for tokens, and create/update the SocialAccount.
         """
         workspace = get_object_or_404(Workspace, id=workspace_id)
-        # Check permissions here (e.g., must be member/admin)
+        if not member_for(request.user, workspace):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         
         code = request.data.get("code", "valid_code")
         platform = request.data.get("platform", Platform.MOCK)
@@ -67,7 +69,8 @@ class SocialAccountListAPIView(views.APIView):
 
     def get(self, request, workspace_id):
         workspace = get_object_or_404(Workspace, id=workspace_id)
-        # Check permissions
+        if not member_for(request.user, workspace):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         
         accounts = SocialAccount.objects.filter(workspace=workspace)
         data = []
@@ -95,7 +98,8 @@ class DisconnectView(views.APIView):
 
     def post(self, request, account_id):
         account = get_object_or_404(SocialAccount, id=account_id)
-        # Check permissions
+        if not member_for(request.user, account.workspace):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         
         account.status = ConnectionStatus.DISCONNECTED
         account.save()
@@ -112,7 +116,8 @@ class AccountStatusView(views.APIView):
 
     def get(self, request, account_id):
         account = get_object_or_404(SocialAccount, id=account_id)
-        # Check permissions
+        if not member_for(request.user, account.workspace):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         
         is_expired = False
         if hasattr(account, 'token'):

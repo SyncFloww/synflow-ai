@@ -23,12 +23,15 @@ class ActivityLoggingMiddleware(MiddlewareMixin):
                 if 'workspaces/' in path:
                     parts = path.split('/')
                     try:
+                        import uuid
                         idx = parts.index('workspaces')
                         if len(parts) > idx + 1:
                             workspace_id = parts[idx + 1]
+                            # Validate it's a proper UUID before querying
+                            uuid.UUID(workspace_id)
                             from workspaces.models import Workspace
                             workspace = Workspace.objects.filter(id=workspace_id).first()
-                    except ValueError:
+                    except (ValueError, AttributeError):
                         pass
 
                 # Get IP Address

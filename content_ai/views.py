@@ -2,6 +2,7 @@ from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from workspaces.models import Workspace
+from workspaces.permissions import member_for
 from .models import ContentGeneration, AIModel, PromptTemplate
 from .services import AIService
 
@@ -10,6 +11,8 @@ class GenerateContentView(views.APIView):
 
     def post(self, request, workspace_id):
         workspace = get_object_or_404(Workspace, id=workspace_id)
+        if not member_for(request.user, workspace):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         
         gen_type = request.data.get("type", "caption") # caption, ideas, rewrite, hashtags, variations
         topic = request.data.get("topic", "")
@@ -72,7 +75,8 @@ class GenerationHistoryAPIView(views.APIView):
 
     def get(self, request, workspace_id):
         workspace = get_object_or_404(Workspace, id=workspace_id)
-        # Verify permissions
+        if not member_for(request.user, workspace):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         generations = ContentGeneration.objects.filter(workspace=workspace).order_by('-created_at')
         
         data = []

@@ -3,13 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from workspaces.models import Workspace
+from workspaces.permissions import IsWorkspaceMember
 from .models import Content, ContentVersion, MediaAsset
 from .serializers import ContentSerializer, MediaAssetSerializer
 import mimetypes
 
 class MediaAssetViewSet(viewsets.ModelViewSet):
     serializer_class = MediaAssetSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsWorkspaceMember]
 
     def get_queryset(self):
         return MediaAsset.objects.filter(workspace_id=self.kwargs['workspace_id'])
@@ -33,7 +34,7 @@ class MediaAssetViewSet(viewsets.ModelViewSet):
 
 class ContentViewSet(viewsets.ModelViewSet):
     serializer_class = ContentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsWorkspaceMember]
 
     def get_queryset(self):
         qs = Content.objects.filter(workspace_id=self.kwargs['workspace_id'])
