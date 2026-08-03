@@ -1,9 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PostViewSet
+from .views import PostViewSet, PostPlatformViewSet, PublishJobViewSet
 
 router = DefaultRouter()
-router.register(r'workspaces/(?P<workspace_id>[^/.]+)', PostViewSet, basename='post')
+router.register('posts', PostViewSet, basename='post')
+router.register('platforms', PostPlatformViewSet, basename='postplatform')
+router.register('jobs', PublishJobViewSet, basename='publishjob')
 
 urlpatterns = [
     path('', include(router.urls)),

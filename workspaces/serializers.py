@@ -1,48 +1,46 @@
-from django.utils.text import slugify
 from rest_framework import serializers
-
+from django.contrib.auth.models import User
 from .models import Workspace, WorkspaceMember, Invitation, WorkspaceSetting
-
-
-class WorkspaceSerializer(serializers.ModelSerializer):
-    role = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Workspace
-        fields = ("id", "name", "slug", "owner", "role", "created_at", "updated_at")
-        read_only_fields = ("id", "owner", "role", "created_at", "updated_at")
-
-    def get_role(self, obj):
-        membership = getattr(obj, "current_membership", None)
-        return membership.role if membership else None
-
-    def validate_slug(self, value):
-        return slugify(value)
-
-
-class MemberSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source="user.email", read_only=True)
-    full_name = serializers.CharField(source="user.full_name", read_only=True)
-
-    class Meta:
-        model = WorkspaceMember
-        fields = ("id", "user", "email", "full_name", "role", "joined_at")
-        read_only_fields = ("id", "user", "email", "full_name", "joined_at")
-
-
-class InvitationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Invitation
-        fields = ("id", "email", "role", "token", "expires_at", "created_at")
-        read_only_fields = ("id", "token", "expires_at", "created_at")
-
-
-class InviteSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    role = serializers.ChoiceField(choices=WorkspaceMember.Role.choices, default=WorkspaceMember.Role.VIEWER)
-
 
 class WorkspaceSettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkspaceSetting
-        fields = ("timezone", "week_starts_on")
+        fields = '__all__'
+
+class WorkspaceMemberSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+    email = serializers.ReadOnlyField(source='user.email')
+
+    class Meta:
+        model = WorkspaceMember
+        fields = ['id', 'workspace', 'user', 'username', 'email', 'role', 'status', 'joined_at', 'updated_at']
+        read_only_fields = ['id', 'joined_at', 'updated_at']
+
+class WorkspaceSerializer(serializers.ModelSerializer):
+    owner_username = serializers.ReadOnlyField(source='owner.username')
+    created_by_username = serializers.ReadOnlyField(source='created_by.username')
+
+    class Meta:
+        model = Workspace
+        fields = ['id', 'owner', 'owner_username', 'created_by', 'created_by_username', 'name', 'slug', 'description', 'is_active', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'owner', 'created_by', 'created_at', 'updated_at']
+
+class InvitationSerializer(serializers.ModelSerializer):
+    invited_by_username = serializers.ReadOnlyField(source='invited_by.username')
+    workspace_name = serializers.ReadOnlyField(source='workspace.name')
+    invited_email = serializers.ReadOnlyField(source='email')
+
+    class Meta:
+        model = Invitation
+        fields = ['id', 'workspace', 'workspace_name', 'email', 'invited_email', 'role', 'is_accepted', 'invited_by', 'invited_by_username', 'created_at', 'expires_at']
+        read_only_fields = ['id', 'is_accepted', 'invited_by', 'created_at']
+
+class InvitationCreateSerializer(serializers.ModelSerializer):
+    invited_by_username = serializers.ReadOnlyField(source='invited_by.username')
+    workspace_name = serializers.ReadOnlyField(source='workspace.name')
+    invited_email = serializers.ReadOnlyField(source='email')
+
+    class Meta:
+        model = Invitation
+        fields = ['id', 'workspace', 'workspace_name', 'email', 'invited_email', 'role', 'token', 'is_accepted', 'invited_by', 'invited_by_username', 'created_at', 'expires_at']
+        read_only_fields = ['id', 'token', 'is_accepted', 'invited_by', 'created_at']

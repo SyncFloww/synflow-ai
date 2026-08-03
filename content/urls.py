@@ -1,11 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContentViewSet, MediaAssetViewSet
+from .views import ContentFolderViewSet, ContentViewSet, ContentVersionViewSet, ContentTagViewSet
 
 router = DefaultRouter()
-router.register(r'media', MediaAssetViewSet, basename='media')
-router.register(r'contents', ContentViewSet, basename='content')
+router.register('folders', ContentFolderViewSet, basename='contentfolder')
+router.register('items', ContentViewSet, basename='content')
+router.register('versions', ContentVersionViewSet, basename='contentversion')
+router.register('tags', ContentTagViewSet, basename='contenttag')
 
 urlpatterns = [
-    path('workspaces/<uuid:workspace_id>/', include(router.urls)),
+    path('', include(router.urls)),
 ]

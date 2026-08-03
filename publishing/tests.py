@@ -1,60 +1,106 @@
-from django.test import TestCase
+from django.contrib.auth.models import User
 from django.utils import timezone
-from workspaces.models import Workspace
-from accounts.models import User
-from content.models import Content
-from social_accounts.models import SocialAccount, Platform, ConnectionStatus
-from .models import Post, PostPlatform, Schedule, PublishJob, PublishResult
-from .services import MockSocialProviderService
-from .tasks import process_publish_job, process_schedule
+from datetime import timedelta
+from rest_framework import status
+from rest_framework.test import APITestCase
 
-class PublishingTests(TestCase):
+from workspaces.models import Workspace, WorkspaceMember
+from social.models import Brand
+from publishing.models import Post, PostPlatform, PublishJob, PublishLog
+from publishing.services import PublishingService
+
+class PublishingServiceTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="user@example.com", password="StrongPass123!")
-        self.workspace = Workspace.objects.create(name="Test Workspace", slug="test-workspace", owner=self.user)
-        self.content = Content.objects.create(workspace=self.workspace, author=self.user, text_content="Awesome post!")
-        
-        self.social_account = SocialAccount.objects.create(
-            workspace=self.workspace, platform=Platform.MOCK, platform_account_id="123", status=ConnectionStatus.CONNECTED
+        self.user = User.objects.create_user(username='pubuser', email='pub@example.com', password='Password123!')
+        self.workspace = Workspace.objects.create(name='Pub WS', owner=self.user)
+        WorkspaceMember.objects.create(workspace=self.workspace, user=self.user, role='OWNER', status='ACTIVE')
+        self.brand = Brand.objects.create(name='Pub Brand', workspace=self.workspace, created_by=self.user)
+
+    def test_create_and_pipeline_transitions(self):
+        post = PublishingService.create_post(
+            user=self.user,
+            brand=self.brand,
+            caption="Hello world",
+            platforms=['instagram', 'linkedin']
         )
-        
-        self.post = Post.objects.create(workspace=self.workspace, content=self.content, created_by=self.user)
-        self.post_platform = PostPlatform.objects.create(post=self.post, social_account=self.social_account)
+        self.assertEqual(post.status, 'draft')
 
-    def test_mock_provider_success(self):
-        job = PublishJob.objects.create(post_platform=self.post_platform)
-        MockSocialProviderService.publish_post(job)
-        
-        job.refresh_from_db()
-        self.assertEqual(job.status, PublishJob.Status.SUCCESS)
-        self.assertTrue(hasattr(job, 'result'))
-        self.assertTrue(job.result.success)
-        self.assertEqual(job.result.platform_post_url, f"https://mock.com/mock_post/{job.id}")
+        PublishingService.submit_for_review(post)
+        self.assertEqual(post.status, 'review')
 
-    def test_mock_provider_failure(self):
-        # Trigger the simulated failure
-        self.content.text_content = "This post will fail."
-        self.content.save()
-        
-        job = PublishJob.objects.create(post_platform=self.post_platform)
-        MockSocialProviderService.publish_post(job)
-        
-        job.refresh_from_db()
-        self.assertEqual(job.status, PublishJob.Status.FAILED)
-        self.assertTrue(hasattr(job, 'result'))
-        self.assertFalse(job.result.success)
-        self.assertEqual(job.result.error_message, "Simulated network or API error")
+        PublishingService.approve_post(post)
+        self.assertEqual(post.status, 'approved')
 
-    def test_process_schedule_task(self):
-        schedule = Schedule.objects.create(post=self.post, scheduled_time=timezone.now())
-        
-        # Run task synchronously
-        process_schedule(schedule.id)
-        
-        schedule.refresh_from_db()
-        self.assertFalse(schedule.is_active)
-        
-        # A PublishJob should be created and processed
-        jobs = PublishJob.objects.filter(post_platform__post=self.post)
-        self.assertEqual(jobs.count(), 1)
-        self.assertEqual(jobs.first().status, PublishJob.Status.SUCCESS)
+        future_time = timezone.now() + timedelta(days=1)
+        PublishingService.schedule_post(post, future_time)
+        self.assertEqual(post.status, 'scheduled')
+        self.assertTrue(PublishJob.objects.filter(post=post, status='pending').exists())
+
+    def test_publish_now_execution(self):
+        post = PublishingService.create_post(
+            user=self.user,
+            brand=self.brand,
+            caption="Publish immediately",
+            platforms=['instagram', 'x']
+        )
+
+        res = PublishingService.publish_now(post)
+        self.assertEqual(res['status'], 'published')
+        self.assertEqual(post.status, 'published')
+        self.assertTrue(PublishLog.objects.filter(job__post=post).exists())
+
+    def test_cancel_post(self):
+        future_time = timezone.now() + timedelta(days=2)
+        post = PublishingService.create_post(
+            user=self.user,
+            brand=self.brand,
+            caption="To cancel",
+            scheduled_at=future_time
+        )
+        self.assertEqual(post.status, 'scheduled')
+
+        PublishingService.cancel_post(post)
+        self.assertEqual(post.status, 'archived')
+        self.assertTrue(PublishJob.objects.filter(post=post, status='cancelled').exists())
+
+
+class PublishingAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='apiuser', email='api@example.com', password='Password123!')
+        self.client.force_authenticate(user=self.user)
+        self.workspace = Workspace.objects.create(name='API WS', owner=self.user)
+        WorkspaceMember.objects.create(workspace=self.workspace, user=self.user, role='OWNER', status='ACTIVE')
+        self.brand = Brand.objects.create(name='API Brand', workspace=self.workspace, created_by=self.user)
+
+    def test_post_crud(self):
+        url = '/api/publishing/posts/'
+        response = self.client.post(url, {
+            'caption': 'API Test Post',
+            'brand': self.brand.id,
+            'workspace': self.workspace.id
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        post_id = response.data['id']
+
+        # Publish Now
+        pub_url = f'/api/publishing/posts/{post_id}/publish-now/'
+        response = self.client.post(pub_url, {'platforms': ['instagram', 'linkedin']}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'published')
+
+    def test_schedule_and_reschedule_api(self):
+        url = '/api/publishing/posts/'
+        response = self.client.post(url, {'caption': 'Schedule me'}, format='json')
+        post_id = response.data['id']
+
+        sched_url = f'/api/publishing/posts/{post_id}/schedule/'
+        future = (timezone.now() + timedelta(hours=5)).isoformat()
+        res = self.client.post(sched_url, {'scheduled_at': future}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['status'], 'scheduled')
+
+        resched_url = f'/api/publishing/posts/{post_id}/reschedule/'
+        new_future = (timezone.now() + timedelta(hours=10)).isoformat()
+        res = self.client.post(resched_url, {'scheduled_at': new_future}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['status'], 'scheduled')

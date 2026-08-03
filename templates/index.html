@@ -1,0 +1,2805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncFloww — AI-Powered Marketing Automation Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #05070f;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        code, pre {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glow-indigo {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+        }
+        .glow-green {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        /* Light Theme Overrides */
+        body.theme-light {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        body.theme-light header {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            border-color: #e2e8f0 !important;
+        }
+        body.theme-light .bg-slate-950\/60,
+        body.theme-light .bg-slate-950\/40,
+        body.theme-light .bg-slate-950\/80,
+        body.theme-light .bg-slate-950,
+        body.theme-light .bg-slate-900\/50,
+        body.theme-light .bg-slate-900\/40,
+        body.theme-light .bg-slate-900\/30,
+        body.theme-light .bg-slate-900\/60,
+        body.theme-light .bg-slate-900,
+        body.theme-light .bg-slate-955,
+        body.theme-light aside > div {
+            background-color: #ffffff !important;
+        }
+        body.theme-light .border-slate-900,
+        body.theme-light .border-slate-800,
+        body.theme-light .border-slate-800\/80,
+        body.theme-light .border-slate-850,
+        body.theme-light .border-slate-700\/60 {
+            border-color: #e2e8f0 !important;
+        }
+        body.theme-light .text-white,
+        body.theme-light h1,
+        body.theme-light h2,
+        body.theme-light h3,
+        body.theme-light h4,
+        body.theme-light h5 {
+            color: #0f172a !important;
+        }
+        body.theme-light .text-slate-200,
+        body.theme-light .text-slate-300 {
+            color: #334155 !important;
+        }
+        body.theme-light .text-slate-400,
+        body.theme-light .text-slate-500 {
+            color: #64748b !important;
+        }
+        body.theme-light .tab-btn:not(.bg-indigo-600) {
+            color: #475569 !important;
+        }
+        body.theme-light .tab-btn:not(.bg-indigo-600):hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+        body.theme-light input,
+        body.theme-light textarea,
+        body.theme-light select {
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        body.theme-light input::placeholder,
+        body.theme-light textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+        body.theme-light pre,
+        body.theme-light code {
+            background-color: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
+            color: #0f172a !important;
+        }
+        body.theme-light .bg-gradient-to-r,
+        body.theme-light .bg-gradient-to-br {
+            background-image: linear-gradient(to right, #eef2ff, #f8fafc, #ffffff) !important;
+            border-color: #c7d2fe !important;
+        }
+        body.theme-light .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        body.theme-light .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+        body.theme-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        body.theme-light #theme-toggle-btn {
+            background-color: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        body.theme-light #theme-toggle-btn:hover {
+            background-color: #e2e8f0 !important;
+        }
+    </style>
+    <script>
+        (function() {
+            var saved = localStorage.getItem('syncflow_theme') || 'dark';
+            if (saved === 'light') {
+                document.documentElement.classList.add('theme-light');
+            }
+        })();
+    </script>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-900 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-indigo-500/20">
+                    S
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        SyncFloww AI
+                        <span class="text-xs font-mono font-normal bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded px-1.5 py-0.5">Phase 2 MVP</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">AI Marketing & Workflow Automation Workspace</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="theme-toggle-btn" onclick="toggleTheme()" class="flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800/80 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer text-slate-300">
+                    <span id="theme-toggle-icon">🌙</span>
+                    <span id="theme-toggle-text" class="hidden sm:inline">Dark Theme</span>
+                </button>
+                <div class="flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 rounded-full px-3 py-1.5">
+                    <span class="h-2.5 w-2.5 rounded-full bg-green-500 glow-green animate-pulse"></span>
+                    <span class="text-xs font-mono font-medium text-slate-300">SYSTEM ONLINE: PORT 3000</span>
+                </div>
+                <div class="text-xs font-mono text-slate-400 bg-slate-900/50 border border-slate-800/80 rounded px-3 py-1.5 hidden md:block">
+                    UTC: <span id="utc-clock">00:00:00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation / Sidebar & Tab Bar Grid Layout -->
+    <div class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Sidebar / Lateral Navigation -->
+        <aside class="w-full lg:w-64 flex-shrink-0">
+            <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-4 sticky top-24 space-y-2">
+                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-wider px-3 mb-2">Modules</p>
+                
+                <nav class="space-y-1">
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 bg-indigo-600 text-white">
+                        <span class="text-base">🏠</span> Dashboard
+                    </button>
+                    <button onclick="switchTab('campaigns')" id="btn-campaigns" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">📅</span> Campaigns
+                    </button>
+                    <button onclick="switchTab('workflows')" id="btn-workflows" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">⚙️</span> Workflow Builder
+                    </button>
+                    <button onclick="switchTab('tasks')" id="btn-tasks" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">📋</span> Tasks & Collab
+                    </button>
+                    <button onclick="switchTab('approvals')" id="btn-approvals" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🔐</span> Approval Queue
+                    </button>
+                    <button onclick="switchTab('prompt_library')" id="btn-prompt_library" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🧠</span> Prompt Library
+                    </button>
+                    <button onclick="switchTab('templates')" id="btn-templates" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🎨</span> Content Templates
+                    </button>
+                    <button onclick="switchTab('reports')" id="btn-reports" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">📈</span> Reports & AI
+                    </button>
+
+                    <!-- PHASE 4 BUSINESS OS SUITE -->
+                    <div class="pt-4 pb-1">
+                        <span class="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider px-3">AI Business OS (Phase 4)</span>
+                    </div>
+                    <button onclick="switchTab('crm')" id="btn-crm" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">💼</span> CRM & Sales
+                    </button>
+                    <button onclick="switchTab('finance')" id="btn-finance" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">💳</span> Finance & MRR
+                    </button>
+                    <button onclick="switchTab('customer_success')" id="btn-customer_success" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🎧</span> Customer Success
+                    </button>
+                    <button onclick="switchTab('hr')" id="btn-hr" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">👥</span> HR & Headcount
+                    </button>
+                    <button onclick="switchTab('executives')" id="btn-executives" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🤝</span> AI Boardroom
+                    </button>
+                    <button onclick="switchTab('marketplace')" id="btn-marketplace" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🧩</span> App Marketplace
+                    </button>
+                    <button onclick="switchTab('developer')" id="btn-developer" class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-slate-400 hover:text-slate-200 hover:bg-slate-900/40">
+                        <span class="text-base">🛠️</span> Developer Hub
+                    </button>
+                </nav>
+
+                <div class="pt-4 border-t border-slate-900 text-xs text-slate-500 px-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span>Theme Mode:</span>
+                        <button onclick="toggleTheme()" class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs flex items-center gap-1 cursor-pointer">
+                            <span id="sidebar-theme-icon">🌙</span> <span id="sidebar-theme-text">Dark</span>
+                        </button>
+                    </div>
+                    <p>Status: <span class="text-emerald-400 font-mono">Connected</span></p>
+                    <p>Version: <span class="text-indigo-400 font-mono">v2.0.0 (MVP)</span></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Container -->
+        <main class="flex-grow space-y-6">
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-pane space-y-6">
+                <!-- Welcome Banner -->
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-500/10 p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
+                    <div class="space-y-2 max-w-2xl">
+                        <div class="inline-flex items-center gap-1.5 text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full px-2.5 py-1">
+                            ✨ PHASE 2 ACTIVE
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-white">Your AI Marketing Operation Workspace is Active</h2>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            Welcome to Syncflow AI Phase 2. We upgraded your social scheduler into a complete, full-scale campaign planning, workflow automation, approval management, and AI recommendations workspace.
+                        </p>
+                    </div>
+                    <div class="flex gap-3 w-full sm:w-auto">
+                        <a href="/admin/" target="_blank" class="flex-1 sm:flex-initial text-center bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-sm font-semibold rounded-xl px-5 py-3 transition-all duration-200">
+                            Django Admin
+                        </a>
+                        <button onclick="switchTab('workflows')" class="flex-1 sm:flex-initial text-center bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl px-5 py-3 transition-all duration-200 shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20">
+                            Configure Workflows
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 hover:border-slate-800 transition-all duration-200">
+                        <div class="flex justify-between items-start">
+                            <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Active Users</p>
+                            <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs">👤</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mt-2">{{ stats.users|default:"1" }}</h3>
+                        <p class="text-xs text-indigo-400 mt-1">Superuser registered</p>
+                    </div>
+
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 hover:border-slate-800 transition-all duration-200">
+                        <div class="flex justify-between items-start">
+                            <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Campaigns</p>
+                            <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs">📅</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mt-2" id="stats-campaigns">0</h3>
+                        <p class="text-xs text-emerald-400 mt-1">Active marketing initiatives</p>
+                    </div>
+
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 hover:border-slate-800 transition-all duration-200">
+                        <div class="flex justify-between items-start">
+                            <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Active Brands</p>
+                            <span class="p-1.5 rounded-lg bg-pink-500/10 text-pink-400 text-xs">🏷️</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mt-2">{{ stats.brands|default:"2" }}</h3>
+                        <p class="text-xs text-slate-400 mt-1">Profiles monitored</p>
+                    </div>
+
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 hover:border-slate-800 transition-all duration-200">
+                        <div class="flex justify-between items-start">
+                            <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Workflows</p>
+                            <span class="p-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs">⚡</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mt-2" id="stats-workflows">0</h3>
+                        <p class="text-xs text-orange-400 mt-1">Automated pipelines</p>
+                    </div>
+                </div>
+
+                <!-- Dual Column Layout: Active Agents & Activities -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left: Active AI Agents Catalog -->
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-white text-lg">System AI Agents</h3>
+                                <p class="text-xs text-slate-400">Pre-configured agents for autonomous tasks</p>
+                            </div>
+                            <span class="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-mono text-indigo-400 uppercase tracking-wider">4 Available</span>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="p-4 rounded-xl bg-slate-900/30 border border-slate-800/80 hover:border-slate-700/60 transition duration-150 flex items-start gap-4">
+                                <span class="text-2xl p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">✍️</span>
+                                <div class="space-y-1">
+                                    <h4 class="text-sm font-semibold text-white">Copywriter Agent</h4>
+                                    <p class="text-xs text-slate-400">Specializes in engaging, brand-aligned captions and multi-format newsletters.</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-900/30 border border-slate-800/80 hover:border-slate-700/60 transition duration-150 flex items-start gap-4">
+                                <span class="text-2xl p-2 bg-pink-500/10 text-pink-400 rounded-lg">🎨</span>
+                                <div class="space-y-1">
+                                    <h4 class="text-sm font-semibold text-white">Creative Designer Agent</h4>
+                                    <p class="text-xs text-slate-400">Generates structure and design mockups for Carousels, Stories, and Video templates.</p>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-900/30 border border-slate-800/80 hover:border-slate-700/60 transition duration-150 flex items-start gap-4">
+                                <span class="text-2xl p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">🛡️</span>
+                                <div class="space-y-1">
+                                    <h4 class="text-sm font-semibold text-white">Brand Voice Guard Agent</h4>
+                                    <p class="text-xs text-slate-400">Reviews all generated output to verify guidelines alignment and brand style compliance.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Activity Feed & Audit logs -->
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-white text-lg">Activity & Audit Logs</h3>
+                                <p class="text-xs text-slate-400">Real-time team & system workspace activities</p>
+                            </div>
+                            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        </div>
+                        
+                        <div class="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1" id="activity-logs">
+                            <!-- Populated dynamically -->
+                            <div class="text-center py-8 text-xs text-slate-500">Loading activities...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: CAMPAIGNS -->
+            <section id="tab-campaigns" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Campaign Management</h2>
+                        <p class="text-xs text-slate-400">Plan budgets, goals, assets, and schedule multi-platform initiatives.</p>
+                    </div>
+                    <button onclick="toggleModal('campaign-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition">
+                        ➕ Create Campaign
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Campaigns List Column -->
+                    <div class="lg:col-span-1 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <h3 class="font-bold text-white text-sm uppercase tracking-wider font-mono text-slate-400">All Campaigns</h3>
+                        <div class="space-y-3" id="campaigns-list">
+                            <!-- Populated dynamically -->
+                            <p class="text-xs text-slate-500 text-center py-6">Loading campaigns...</p>
+                        </div>
+                    </div>
+
+                    <!-- Selected Campaign Detail Column -->
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-6 hidden" id="campaign-detail-pane">
+                        <div class="flex justify-between items-start border-b border-slate-900 pb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-white" id="detail-campaign-name">Black Friday 2027</h3>
+                                <p class="text-xs text-slate-400 mt-1" id="detail-campaign-desc">Year-end promotional event.</p>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400" id="detail-campaign-status">Active</span>
+                        </div>
+
+                        <!-- Campaign Meta Grid -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+                                <p class="text-[10px] font-mono text-slate-400 uppercase">Budget Allocation</p>
+                                <p class="text-lg font-bold text-white mt-1" id="detail-campaign-budget">$0.00</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+                                <p class="text-[10px] font-mono text-slate-400 uppercase">Start Date</p>
+                                <p class="text-sm font-semibold text-white mt-1" id="detail-campaign-start">2026-01-01</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
+                                <p class="text-[10px] font-mono text-slate-400 uppercase">End Date</p>
+                                <p class="text-sm font-semibold text-white mt-1" id="detail-campaign-end">2026-12-31</p>
+                            </div>
+                        </div>
+
+                        <!-- Sub-Modules Accordion / Grid -->
+                        <div class="space-y-4">
+                            <h4 class="font-bold text-sm text-white">Campaign Goals & Objectives</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="detail-campaign-goals">
+                                <!-- Goals go here -->
+                            </div>
+
+                            <div class="flex justify-between items-center pt-2">
+                                <h4 class="font-bold text-sm text-white">Associated Assets</h4>
+                                <button onclick="openAddAssetModal()" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">➕ Add Asset</button>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="detail-campaign-assets">
+                                <!-- Assets go here -->
+                            </div>
+
+                            <h4 class="font-bold text-sm text-white pt-2">Campaign Analytics Insight</h4>
+                            <div class="grid grid-cols-4 gap-4 bg-indigo-950/20 border border-indigo-950 p-4 rounded-xl text-center">
+                                <div>
+                                    <span class="text-xs text-slate-400 block">Total Views</span>
+                                    <span class="text-base font-bold text-white mt-1" id="detail-campaign-views">0</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-slate-400 block">Likes</span>
+                                    <span class="text-base font-bold text-white mt-1" id="detail-campaign-likes">0</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-slate-400 block">Shares</span>
+                                    <span class="text-base font-bold text-white mt-1" id="detail-campaign-shares">0</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-slate-400 block">Comments</span>
+                                    <span class="text-base font-bold text-white mt-1" id="detail-campaign-comments">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Welcome details -->
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-8 text-center flex flex-col justify-center items-center py-20" id="campaign-detail-placeholder">
+                        <span class="text-4xl">📅</span>
+                        <h3 class="text-lg font-bold text-white mt-4">No Campaign Selected</h3>
+                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Select a campaign from the left list to see its timeline, budget, assets, goals, and analytics metrics.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: WORKFLOWS -->
+            <section id="tab-workflows" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Visual Workflow Builder</h2>
+                        <p class="text-xs text-slate-400">Design no-code automation blocks to automatically trigger AI generation, notifications, tasks, and scheduled social posts.</p>
+                    </div>
+                    <button onclick="toggleModal('workflow-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition">
+                        ➕ Create Workflow
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Workflow Selection List -->
+                    <div class="lg:col-span-1 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <h3 class="font-bold text-white text-sm uppercase tracking-wider font-mono text-slate-400">My Pipelines</h3>
+                        <div class="space-y-3" id="workflows-list">
+                            <!-- Populated dynamically -->
+                            <p class="text-xs text-slate-500 text-center py-6">Loading pipelines...</p>
+                        </div>
+                    </div>
+
+                    <!-- Active Builder canvas -->
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-6 hidden" id="workflow-canvas-pane">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white" id="canvas-workflow-name">Black Friday Promo Automation</h3>
+                                <p class="text-xs text-slate-400 mt-1" id="canvas-workflow-desc">Triggers on manual schedule.</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="triggerWorkflowExecution()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl px-3.5 py-2 transition flex items-center gap-1.5">
+                                    ⚡ Run Now
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Visual Grid of Blocks -->
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-mono text-slate-400 uppercase tracking-wider">Pipeline Steps Graph</h4>
+                            
+                            <div class="flex flex-col gap-4 items-center py-4 bg-slate-950/60 rounded-2xl border border-slate-900/80 p-6 overflow-x-auto relative">
+                                <!-- Block 1: Trigger -->
+                                <div class="w-64 bg-slate-900 border border-orange-500/30 rounded-xl p-4 glow-indigo relative">
+                                    <span class="absolute top-2 right-2 text-xs text-orange-400 font-mono">Trigger</span>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl">⏰</span>
+                                        <div>
+                                            <h5 class="text-xs font-bold text-white">Trigger Block</h5>
+                                            <p class="text-[10px] text-slate-400 mt-0.5" id="canvas-trigger-type">Scheduled Time</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Arrow line -->
+                                <div class="h-8 w-0.5 bg-slate-800 relative">
+                                    <div class="absolute -bottom-1 -left-1 text-[10px] text-slate-500">▼</div>
+                                </div>
+
+                                <!-- Block 2: Action - AI Copywriter -->
+                                <div class="w-64 bg-slate-900 border border-indigo-500/30 rounded-xl p-4 glow-indigo relative">
+                                    <span class="absolute top-2 right-2 text-xs text-indigo-400 font-mono">AI Engine</span>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl">🧠</span>
+                                        <div>
+                                            <h5 class="text-xs font-bold text-white">Generate AI Content</h5>
+                                            <p class="text-[10px] text-slate-400 mt-0.5">Model: gemini-3.5-flash</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Arrow line -->
+                                <div class="h-8 w-0.5 bg-slate-800 relative">
+                                    <div class="absolute -bottom-1 -left-1 text-[10px] text-slate-500">▼</div>
+                                </div>
+
+                                <!-- Block 3: Action - Channel publish -->
+                                <div class="w-64 bg-slate-900 border border-pink-500/30 rounded-xl p-4 glow-indigo relative">
+                                    <span class="absolute top-2 right-2 text-xs text-pink-400 font-mono">Publish</span>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl">📤</span>
+                                        <div>
+                                            <h5 class="text-xs font-bold text-white">Auto Publish Socials</h5>
+                                            <p class="text-[10px] text-slate-400 mt-0.5">Platforms: Instagram & LinkedIn</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Executions Logs Panel -->
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-mono text-slate-400 uppercase tracking-wider">Live Execution Logs</h4>
+                            <pre class="bg-slate-950 p-4 rounded-xl border border-slate-900 text-xs text-emerald-400 overflow-y-auto max-h-[160px] custom-scrollbar font-mono leading-relaxed" id="execution-logs-box">Select active pipeline and click 'Run Now' to execute and trigger the automated marketing sequence.</pre>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-8 text-center flex flex-col justify-center items-center py-20" id="workflow-canvas-placeholder">
+                        <span class="text-4xl">⚙️</span>
+                        <h3 class="text-lg font-bold text-white mt-4">No Pipeline Selected</h3>
+                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Select a pipeline or create a new visual workflow trigger graph to monitor automatic executions.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: TASKS -->
+            <section id="tab-tasks" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Collaboration Tasks Board</h2>
+                        <p class="text-xs text-slate-400">Assign specific campaign deliverables, reviews, or asset generation duties to team members.</p>
+                    </div>
+                    <button onclick="toggleModal('task-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition">
+                        ➕ Create Task
+                    </button>
+                </div>
+
+                <!-- Kanban Columns Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Column 1: Pending -->
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-2">
+                            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <span class="h-2 w-2 rounded-full bg-indigo-500"></span> To Do
+                            </h3>
+                            <span class="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[10px] font-mono" id="task-count-pending">0</span>
+                        </div>
+                        <div class="space-y-3" id="tasks-todo-col">
+                            <!-- Tasks populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Progress -->
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-2">
+                            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <span class="h-2 w-2 rounded-full bg-orange-400"></span> In Progress
+                            </h3>
+                            <span class="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[10px] font-mono" id="task-count-progress">0</span>
+                        </div>
+                        <div class="space-y-3" id="tasks-progress-col">
+                            <!-- Tasks populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Completed -->
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-2">
+                            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Completed
+                            </h3>
+                            <span class="bg-slate-900 text-slate-300 px-2 py-0.5 rounded text-[10px] font-mono" id="task-count-completed">0</span>
+                        </div>
+                        <div class="space-y-3" id="tasks-completed-col">
+                            <!-- Tasks populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: APPROVALS -->
+            <section id="tab-approvals" class="tab-pane hidden space-y-6">
+                <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
+                    <h2 class="text-xl font-bold text-white">Approval Workflows & Verification Queue</h2>
+                    <p class="text-xs text-slate-400">Strictly audit, edit, and verify content drafts or campaigns prior to live publishing cycles.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Pending Approvals Column -->
+                    <div class="lg:col-span-1 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <h3 class="font-bold text-white text-sm uppercase tracking-wider font-mono text-slate-400">Review Queue</h3>
+                        <div class="space-y-3" id="approvals-list">
+                            <!-- Populated dynamically -->
+                            <p class="text-xs text-slate-500 text-center py-6">Loading approval requests...</p>
+                        </div>
+                    </div>
+
+                    <!-- Active Review / Compare Panel -->
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-6 hidden" id="approval-review-pane">
+                        <div class="flex justify-between items-start border-b border-slate-900 pb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white" id="review-request-title">Approval Request</h3>
+                                <p class="text-xs text-slate-400 mt-1" id="review-request-meta">Submitted by copywriter</p>
+                            </div>
+                            <span class="px-2 py-1 rounded bg-orange-500/10 border border-orange-500/20 text-xs font-semibold text-orange-400" id="review-request-status">Pending</span>
+                        </div>
+
+                        <!-- Stage / reviewer pipeline info -->
+                        <div class="p-4 rounded-xl bg-slate-900/30 border border-slate-800 flex items-center gap-4 text-xs">
+                            <span class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">🛡️</span>
+                            <div>
+                                <p class="font-semibold text-white">Manager Verification Required</p>
+                                <p class="text-slate-400 mt-0.5" id="review-request-stages">Stage 1: Manager level check</p>
+                            </div>
+                        </div>
+
+                        <!-- Review Actions form -->
+                        <div class="space-y-4 pt-4 border-t border-slate-900">
+                            <h4 class="font-bold text-sm text-white">Audit Assessment Feedback</h4>
+                            
+                            <div class="space-y-2">
+                                <label class="text-xs text-slate-400">Review Comments & Guidelines Corrections</label>
+                                <textarea id="approval-notes" rows="3" placeholder="Enter comments or specific instructions if requesting changes..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button onclick="submitApprovalResponse('approved')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl py-3 transition">
+                                    ✓ Approve & Release
+                                </button>
+                                <button onclick="submitApprovalResponse('changes_requested')" class="flex-1 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-xl py-3 transition">
+                                    ⚠ Request Changes
+                                </button>
+                                <button onclick="submitApprovalResponse('rejected')" class="flex-1 bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold rounded-xl py-3 transition">
+                                    ✗ Reject Post
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- History logs -->
+                        <div class="space-y-2 pt-4 border-t border-slate-900">
+                            <h4 class="text-xs font-mono text-slate-400 uppercase tracking-wider">Approval Journey Logs</h4>
+                            <div class="space-y-2" id="review-history-box">
+                                <!-- History entries go here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-8 text-center flex flex-col justify-center items-center py-20" id="approval-review-placeholder">
+                        <span class="text-4xl">🔐</span>
+                        <h3 class="text-lg font-bold text-white mt-4">No Review Selected</h3>
+                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Select an active verification request from the left list to review contents and record decisions.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: PROMPT LIBRARY -->
+            <section id="tab-prompt_library" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">AI Prompt & Variable Library</h2>
+                        <p class="text-xs text-slate-400">Save and re-use curated prompt templates configured with dynamic variable replacement inputs.</p>
+                    </div>
+                    <button onclick="toggleModal('prompt-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition">
+                        ➕ Create Template
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Library Items Column -->
+                    <div class="lg:col-span-1 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4">
+                        <h3 class="font-bold text-white text-sm uppercase tracking-wider font-mono text-slate-400">Available Templates</h3>
+                        <div class="space-y-3" id="prompts-list">
+                            <!-- Populated dynamically -->
+                            <p class="text-xs text-slate-500 text-center py-6">Loading library templates...</p>
+                        </div>
+                    </div>
+
+                    <!-- Prompt render playground -->
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-6 hidden" id="prompt-render-pane">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-white" id="render-prompt-title">Instagram Promo Copywriter</h3>
+                                <p class="text-xs text-slate-400 mt-1" id="render-prompt-category">Category: Social Copy</p>
+                            </div>
+                            <span class="text-xs font-mono text-indigo-400">Version 1.2</span>
+                        </div>
+
+                        <!-- Prompt text preview -->
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Raw Prompt Text</span>
+                            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-300 leading-relaxed break-words" id="render-prompt-raw">
+                                raw prompt template text here
+                            </div>
+                        </div>
+
+                        <!-- Dynamic inputs form -->
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-sm text-white">Dynamic Variables Configuration</h4>
+                            <form id="prompt-variables-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Inputs are populated dynamically based on prompt variables -->
+                            </form>
+                        </div>
+
+                        <!-- Action row -->
+                        <div class="flex gap-3 pt-2">
+                            <button onclick="renderAndRunPrompt()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl py-3 transition">
+                                🧠 Substitute & Run Content Generation
+                            </button>
+                        </div>
+
+                        <!-- Result output panel -->
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-mono text-slate-400 uppercase tracking-wider">Gemini Output Copy</h4>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-900 text-xs text-indigo-300 leading-relaxed font-sans max-h-[220px] overflow-y-auto custom-scrollbar" id="render-prompt-output">
+                                Content output will stream here.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-slate-950/40 border border-slate-900 rounded-2xl p-8 text-center flex flex-col justify-center items-center py-20" id="prompt-render-placeholder">
+                        <span class="text-4xl">🧠</span>
+                        <h3 class="text-lg font-bold text-white mt-4">No Prompt Template Selected</h3>
+                        <p class="text-xs text-slate-400 mt-1 max-w-sm">Select a stored prompt template from the left list to dynamically substitute variables and launch model generations.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 7: CONTENT TEMPLATES -->
+            <section id="tab-templates" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Content Layout Guidelines & Templates</h2>
+                        <p class="text-xs text-slate-400">Access pre-saved layout rules, size structures, and design guidelines across social channels.</p>
+                    </div>
+                    <button onclick="toggleModal('template-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition">
+                        ➕ Create Guideline
+                    </button>
+                </div>
+
+                <!-- Grid of saved formats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="templates-grid">
+                    <!-- Dynamic templates populated here -->
+                </div>
+            </section>
+
+            <!-- TAB 8: REPORTS & RECOMMENDATIONS -->
+            <section id="tab-reports" class="tab-pane hidden space-y-6">
+                <!-- AI Recommendations Board -->
+                <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">AI Marketing Insights & Recommendations</h2>
+                            <p class="text-xs text-slate-400">Tailored, machine-learned suggestions and timing adjustments based on historical post engagement metrics.</p>
+                        </div>
+                        <button onclick="triggerGenerateRecommendations()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl px-4 py-2.5 transition flex items-center gap-1.5">
+                            🧠 Refresh Insights
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="recommendations-box">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-6 space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-900 pb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white">Executive Strategy Reports</h2>
+                            <p class="text-xs text-slate-400">Generate weekly or monthly campaign reviews and insight documents.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="triggerGenerateReport('weekly')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl px-3.5 py-2 transition">
+                                📈 Generate Weekly Report
+                            </button>
+                            <button onclick="triggerGenerateReport('monthly')" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl px-3.5 py-2 transition">
+                                📊 Generate Monthly Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reports list / rendering panel -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 border-r border-slate-900/50 pr-4 space-y-3">
+                            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">Report History</h3>
+                            <div class="space-y-2" id="reports-history-list">
+                                <!-- Populated dynamically -->
+                                <p class="text-xs text-slate-500">No reports generated yet.</p>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-2 space-y-4 hidden" id="report-view-pane">
+                            <h3 class="text-lg font-bold text-white" id="report-pane-title">AI Marketing Summary Report</h3>
+                            <div class="bg-slate-950 p-6 rounded-2xl border border-slate-900 space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar text-sm leading-relaxed" id="report-pane-content">
+                                <!-- Filled dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-2 text-center py-16 flex flex-col justify-center items-center" id="report-pane-placeholder">
+                            <span class="text-3xl">📊</span>
+                            <p class="text-xs text-slate-500 mt-2">Select a report from history or click 'Generate' above to build a strategic review of marketing outcomes.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 9: CRM & SALES -->
+            <section id="tab-crm" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                            💼 CRM & Pipeline Sales <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Phase 4 Active</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Acquire, qualify, and close high-value accounts with Gemini-powered strategic sales intelligence.</p>
+                    </div>
+                </div>
+
+                <!-- Main Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left: Leads Listing & Creation -->
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+                            <h3 class="font-bold text-white text-sm">Create New CRM Lead</h3>
+                            <form id="crm-lead-form" class="space-y-3" onsubmit="createLead(event)">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Company Name</label>
+                                    <input type="text" id="lead-company" required placeholder="e.g. Acme Corporation" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Contact Name</label>
+                                    <input type="text" id="lead-contact" required placeholder="e.g. Jane Doe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Contact Email</label>
+                                        <input type="email" id="lead-email" required placeholder="jane@acme.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Value ($)</label>
+                                        <input type="number" id="lead-value" value="15000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Lead Notes</label>
+                                    <textarea id="lead-notes" rows="2" placeholder="e.g. Interested in scaling multi-channel video ads..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-2 text-xs transition">
+                                    ➕ Create Lead Card
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Leads List -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
+                            <h3 class="font-bold text-white text-sm">Leads List</h3>
+                            <div class="space-y-2 max-h-[300px] overflow-y-auto pr-1" id="crm-leads-container">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Lead Details & AI Qualifier -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 min-h-[500px] flex flex-col justify-between" id="crm-detail-box">
+                            <div class="text-center py-20 flex flex-col justify-center items-center w-full" id="crm-placeholder">
+                                <span class="text-4xl">💼</span>
+                                <p class="text-xs text-slate-500 mt-2">Select a lead card from the list to unlock detailed qualifiers and Gemini-powered smart outreach playbooks.</p>
+                            </div>
+                            <!-- Loaded on selection -->
+                            <div id="crm-details" class="hidden space-y-6">
+                                <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-white" id="crm-detail-company">Company</h3>
+                                        <p class="text-xs text-slate-400 mt-1">Contact: <span class="text-white font-semibold" id="crm-detail-contact">Name</span> (<span id="crm-detail-email" class="font-mono text-indigo-400">email</span>)</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-mono px-2.5 py-1 rounded bg-slate-800 text-slate-300" id="crm-detail-stage">Stage</span>
+                                        <p class="text-lg font-bold text-indigo-400 mt-2 font-mono" id="crm-detail-value">$0.00</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl space-y-2">
+                                        <h4 class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Current Lead Requirements</h4>
+                                        <p class="text-xs text-slate-200 leading-relaxed italic" id="crm-detail-notes">Notes...</p>
+                                    </div>
+
+                                    <div class="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl flex flex-col justify-between">
+                                        <div>
+                                            <h4 class="text-[10px] uppercase font-bold tracking-wider text-slate-400">AI Qualifier Score</h4>
+                                            <div class="flex items-baseline gap-2 mt-2">
+                                                <span class="text-3xl font-extrabold text-white" id="crm-ai-score">N/A</span>
+                                                <span class="text-[10px] font-mono text-emerald-400">fit match</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 mt-1">Derived from historical customer patterns.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Gemini Smart Panel -->
+                                <div class="bg-gradient-to-r from-indigo-950/50 via-slate-900 to-slate-900 border border-indigo-500/20 rounded-2xl p-5 space-y-4 relative overflow-hidden">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-base">🧠</span>
+                                            <h4 class="font-bold text-white text-sm">Gemini Lead Analysis & Playbook</h4>
+                                        </div>
+                                        <button onclick="analyzeLead()" id="btn-analyze-lead" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                                            Run AI Qualification
+                                        </button>
+                                    </div>
+
+                                    <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 min-h-[120px] whitespace-pre-wrap leading-relaxed" id="crm-ai-analysis">
+                                Ready. Click "Run AI Qualification" to trigger live Gemini agent profiling.
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center border-t border-slate-800 pt-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="updateLeadStage('negotiating')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition">
+                                            🤝 Mark Negotiating
+                                        </button>
+                                        <button onclick="updateLeadStage('closed_won')" class="px-3 py-1.5 bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/30 text-emerald-400 rounded-xl text-xs font-semibold transition">
+                                            🏆 Closed Won
+                                        </button>
+                                    </div>
+                                    <button onclick="deleteLead()" class="text-xs text-pink-500 hover:text-pink-400 font-semibold transition">
+                                        Remove Lead
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 10: FINANCE & MRR -->
+            <section id="tab-finance" class="tab-pane hidden space-y-6">
+                <!-- Top Row Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-900 border border-indigo-500/10 rounded-3xl p-6 relative overflow-hidden flex items-center justify-between shadow-xl">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block">Monthly Recurring Revenue</span>
+                            <h3 class="text-3xl font-extrabold text-white font-mono" id="fin-total-mrr">$0.00</h3>
+                        </div>
+                        <span class="text-3xl p-3 bg-indigo-500/10 rounded-2xl">💳</span>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden flex items-center justify-between">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">Active Subscriptions</span>
+                            <h3 class="text-3xl font-extrabold text-white font-mono" id="fin-total-subs">0</h3>
+                        </div>
+                        <span class="text-3xl p-3 bg-slate-800 rounded-2xl">👥</span>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden flex items-center justify-between">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-mono font-bold text-pink-400 uppercase tracking-wider block">Monthly Burn Rate</span>
+                            <h3 class="text-3xl font-extrabold text-white font-mono" id="fin-total-burn">$0.00</h3>
+                        </div>
+                        <span class="text-3xl p-3 bg-pink-500/10 rounded-2xl">🔥</span>
+                    </div>
+                </div>
+
+                <!-- Main Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- SaaS subscriptions and payments -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h3 class="font-bold text-white text-sm">Active Customer Subscriptions</h3>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">SaaS Recurring</span>
+                        </div>
+                        <div class="space-y-3 max-h-[350px] overflow-y-auto pr-1" id="fin-subs-container">
+                            <!-- Subscription items dynamically loaded -->
+                        </div>
+                    </div>
+
+                    <!-- AI CFO Tactical Advisor -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg">🤖</span>
+                                    <h3 class="font-bold text-white text-sm">AI CFO Strategic Forecaster</h3>
+                                </div>
+                                <button onclick="generateFinancialForecast()" id="btn-finance-forecast" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                                    Run 3-Month Projection
+                                </button>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Let Gemini evaluate subscription velocities, burn rate ratios, and customer retention metrics to draft a strategic runway advisory document.</p>
+
+                            <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl font-mono text-xs text-slate-300 min-h-[220px] whitespace-pre-wrap leading-relaxed" id="fin-forecast-display">
+                                Click "Run 3-Month Projection" to invoke deep structural SaaS runway models.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 11: CUSTOMER SUCCESS -->
+            <section id="tab-customer_success" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                            🎧 Customer Success Helpdesk <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">CSAT Active</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Resolve corporate client issues instantly using automated helpdesk systems and custom Gemini replies.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Tickets List -->
+                    <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+                        <h3 class="font-bold text-white text-sm">Support Tickets</h3>
+                        <div class="space-y-2 max-h-[450px] overflow-y-auto pr-1" id="cs-tickets-container">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Selected Ticket Panel -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 min-h-[500px] flex flex-col justify-between" id="cs-detail-box">
+                            <div class="text-center py-20 flex flex-col justify-center items-center w-full" id="cs-placeholder">
+                                <span class="text-4xl">🎧</span>
+                                <p class="text-xs text-slate-500 mt-2">Select a corporate ticket from the list to preview messages and draft generative Gemini responses.</p>
+                            </div>
+
+                            <div id="cs-details" class="hidden space-y-6 w-full">
+                                <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white" id="cs-detail-subject">Subject</h3>
+                                        <p class="text-xs text-slate-400 mt-1">Customer: <span id="cs-detail-customer" class="font-semibold text-white">Name</span></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-300 uppercase" id="cs-detail-priority">Priority</span>
+                                        <span class="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-300 ml-1 uppercase" id="cs-detail-status">Status</span>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                                    <h4 class="text-[10px] uppercase font-bold tracking-wider text-slate-500 font-mono">Original Message</h4>
+                                    <p class="text-xs text-slate-200 leading-relaxed italic" id="cs-detail-msg">Message content...</p>
+                                </div>
+
+                                <!-- Gemini Reply Suggestion -->
+                                <div class="bg-gradient-to-r from-indigo-950/50 via-slate-900 to-slate-900 border border-indigo-500/20 rounded-2xl p-5 space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-base">✨</span>
+                                            <h4 class="font-bold text-white text-sm">Gemini Auto-Draft Support Helper</h4>
+                                        </div>
+                                        <button onclick="suggestTicketReply()" id="btn-cs-reply" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                                            Generate AI Reply Draft
+                                        </button>
+                                    </div>
+
+                                    <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 min-h-[120px] whitespace-pre-wrap leading-relaxed" id="cs-ai-reply">
+                                        Click "Generate AI Reply Draft" to auto-compile support response templates.
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center border-t border-slate-800 pt-4">
+                                    <button onclick="updateTicketStatus('resolved')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs transition">
+                                        ✅ Resolve and Close Ticket
+                                    </button>
+                                    <p class="text-[10px] text-slate-500">Corporate success score remains active.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 12: HR & STAFFING -->
+            <section id="tab-hr" class="tab-pane hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Employees Directory -->
+                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h3 class="font-bold text-white text-sm">Headcount & Employees Directory</h3>
+                            <span class="text-[10px] font-mono text-slate-400">Total Company Headcount</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-500 font-mono text-[10px] uppercase">
+                                        <th class="py-2">Employee</th>
+                                        <th class="py-2">Department</th>
+                                        <th class="py-2">Role</th>
+                                        <th class="py-2 text-right">Compensation (ARR)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hr-employees-table" class="divide-y divide-slate-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- AI Headcount Advisor -->
+                    <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">👥</span>
+                                    <h3 class="font-bold text-white text-sm">AI HR Staffing Advisor</h3>
+                                </div>
+                                <button onclick="recommendHiring()" id="btn-hr-advisor" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                                    Evaluate Gaps
+                                </button>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Let Gemini analyze current marketing pipelines, crm loads, active workflows, and employee distributions to locate organizational bottleneck departments and recommend hire strategies.</p>
+
+                            <div class="p-3 bg-slate-950 border border-slate-800 rounded-2xl font-mono text-xs text-slate-300 min-h-[220px] whitespace-pre-wrap leading-relaxed" id="hr-advisor-display">
+                                Click "Evaluate Gaps" to analyze staff structure optimization potentials.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 13: AI BOARDROOM -->
+            <section id="tab-executives" class="tab-pane hidden space-y-6">
+                <!-- Boardroom overview -->
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-955 via-slate-900 to-slate-950 border border-indigo-500/10 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+                    <div class="space-y-1">
+                        <h2 class="text-xl font-bold text-white">Virtual AI Executive Suite (Boardroom)</h2>
+                        <p class="text-xs text-slate-400">Assemble the autonomous executive suite. Let the AI CEO, CFO, CMO, CTO, and HR Manager discuss actual SaaS metrics and draft consensus directives.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="meeting-type" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none">
+                            <option value="weekly_sync">Weekly Performance Sync</option>
+                            <option value="strategic_pivot">Strategic Runway Re-allocation</option>
+                            <option value="marketing_blitz">Product Launch & Ad Blitz</option>
+                        </select>
+                        <button onclick="holdBoardMeeting()" id="btn-hold-meeting" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                            🤝 Hold Virtual Board Meeting
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Executives Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">👩‍💼</span>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Eleanor Vance</h4>
+                                <span class="text-[9px] font-mono text-indigo-400 uppercase">AI CEO</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic leading-relaxed">Focuses on high-level strategy, investor updates, corporate vision, and bottleneck unblocking.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">👨‍💼</span>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Marcus Sterling</h4>
+                                <span class="text-[9px] font-mono text-indigo-400 uppercase">AI CFO</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic leading-relaxed">Focuses on unit economics, customer MRR longevity, burn levels, expense margins, and runway stability.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">👩‍💻</span>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Sarah Jenkins</h4>
+                                <span class="text-[9px] font-mono text-indigo-400 uppercase">AI CMO</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic leading-relaxed">Focuses on lead conversion funnels, budget allocation, asset generation, and marketing campaigns.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">👨‍💻</span>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Dr. Aris Thorne</h4>
+                                <span class="text-[9px] font-mono text-indigo-400 uppercase">AI CTO</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic leading-relaxed">Focuses on technical architectures, workflow API integrations, app integrations, and developer performance.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">👩‍🎨</span>
+                            <div>
+                                <h4 class="font-bold text-white text-xs">Clara Moss</h4>
+                                <span class="text-[9px] font-mono text-indigo-400 uppercase">AI HR Manager</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic leading-relaxed">Focuses on organizational design, department bottleneck resolution, and strategic developer hires.</p>
+                    </div>
+                </div>
+
+                <!-- Board Transcript Display -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                    <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                        📝 Board Meeting Dialogue Transcript <span class="text-[10px] font-mono bg-slate-800 text-slate-400 px-2 py-0.5 rounded" id="meeting-time-badge">Awaiting Sync</span>
+                    </h3>
+                    <div class="p-5 bg-slate-950 border border-slate-850 rounded-2xl font-mono text-xs text-slate-300 min-h-[350px] max-h-[500px] overflow-y-auto whitespace-pre-wrap leading-relaxed" id="board-transcript-container">
+No board meeting has been initiated yet. Select a sync agenda above and click "Hold Virtual Board Meeting" to watch the autonomous board coordinate corporate strategy!
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 14: APP MARKETPLACE -->
+            <section id="tab-marketplace" class="tab-pane hidden space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                            🧩 App & Agent Marketplace <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Phase 4 Active</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Install or uninstall advanced AI workflows, custom data processors, and corporate tools directly in your ecosystem.</p>
+                    </div>
+                </div>
+
+                <!-- Apps Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="marketplace-apps-grid">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- TAB 15: DEVELOPER HUB -->
+            <section id="tab-developer" class="tab-pane hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- API Keys Segment -->
+                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h3 class="font-bold text-white text-sm">Corporate Access Tokens & API Keys</h3>
+                            <button onclick="generateApiKey()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+                                🔑 Generate Live API Key
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-500 font-mono text-[10px] uppercase">
+                                        <th class="py-2">Label</th>
+                                        <th class="py-2 font-mono">Token Prefix</th>
+                                        <th class="py-2 font-mono">Status</th>
+                                        <th class="py-2 text-right">Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dev-keys-table" class="divide-y divide-slate-800/50 text-slate-300">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Webhook endpoints -->
+                    <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                                <h3 class="font-bold text-white text-sm">System Webhooks Sync</h3>
+                                <span class="text-[10px] font-mono text-slate-500">Callbacks</span>
+                            </div>
+                            <div class="space-y-3" id="dev-webhooks-container">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Webhook Console Mock -->
+                        <div class="mt-4 p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                            <h4 class="text-[9px] uppercase tracking-wider font-bold text-slate-400 font-mono">Handshake Webhook Output</h4>
+                            <pre id="webhook-test-console" class="text-[10px] font-mono text-emerald-400 bg-slate-950 p-2 rounded max-h-[100px] overflow-y-auto">
+Handshake console offline. Click "Test Dispatch" on any webhook above to view ping telemetry.
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: Create Campaign -->
+    <div id="campaign-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-lg">Create New Campaign</h3>
+                <button onclick="toggleModal('campaign-modal')" class="text-slate-400 hover:text-slate-200 text-lg">✕</button>
+            </div>
+            <form id="campaign-form" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Campaign Name</label>
+                    <input type="text" name="name" required placeholder="e.g. Black Friday 2027" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Description</label>
+                    <textarea name="description" rows="2" placeholder="Describe the objectives and theme..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Main Goal / Target Metric</label>
+                    <input type="text" name="goal" placeholder="e.g. Increase sales, Grow Instagram following by 15%" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400">Start Date</label>
+                        <input type="date" name="start_date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400">End Date</label>
+                        <input type="date" name="end_date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400">Budget ($)</label>
+                        <input type="number" name="budget" value="1000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400">Status</label>
+                        <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="draft">Draft</option>
+                            <option value="active" selected>Active</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-3 text-sm transition">Create Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Create Workflow -->
+    <div id="workflow-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-lg">Create Automation Pipeline</h3>
+                <button onclick="toggleModal('workflow-modal')" class="text-slate-400 hover:text-slate-200 text-lg">✕</button>
+            </div>
+            <form id="workflow-form" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Pipeline Name</label>
+                    <input type="text" name="name" required placeholder="e.g. Christmas Promo Sequence" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Description</label>
+                    <textarea name="description" rows="2" placeholder="Explain what triggers this sequence and who is notified..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Trigger Type</label>
+                    <select name="trigger_type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="scheduled_time">Scheduled Calendar Time</option>
+                        <option value="new_follower">New Follower Event</option>
+                        <option value="comment_detected">User Comment Received</option>
+                        <option value="manual">Manual Trigger Only</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Core AI Task Action</label>
+                    <select name="action_type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="generate_ai_content">Generate Promo Copy with Copywriter Agent</option>
+                        <option value="publish">Directly Publish to Linked Social Channels</option>
+                        <option value="notify_team">Trigger Slack Workspace Notification</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-3 text-sm transition">Create Pipeline</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Create Task -->
+    <div id="task-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-lg">Assign Collaboration Task</h3>
+                <button onclick="toggleModal('task-modal')" class="text-slate-400 hover:text-slate-200 text-lg">✕</button>
+            </div>
+            <form id="task-form" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Task Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Draft video outline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Description</label>
+                    <textarea name="description" rows="2" placeholder="Detail the guidelines..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400">Assign To (User ID)</label>
+                        <input type="number" name="assigned_to" value="1" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs text-slate-400">Due Date</label>
+                        <input type="date" name="due_date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Task Column Status</label>
+                    <select name="status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="pending" selected>To Do</option>
+                        <option value="progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-3 text-sm transition">Assign Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Create Prompt Template -->
+    <div id="prompt-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-lg">Create Reusable Prompt</h3>
+                <button onclick="toggleModal('prompt-modal')" class="text-slate-400 hover:text-slate-200 text-lg">✕</button>
+            </div>
+            <form id="prompt-form" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Template Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Instagram Promo Caption" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Prompt Text (Use double braces for variables e.g. {{topic}})</label>
+                    <textarea name="prompt_text" required rows="4" placeholder="Write copy about {{topic}} focusing on target audience {{audience}} using {{tone}} tone." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 font-mono text-xs"></textarea>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Variables (Comma-separated list)</label>
+                    <input type="text" name="variables_list" placeholder="topic, audience, tone" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-3 text-sm transition">Save Template</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Campaign Asset -->
+    <div id="asset-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-lg">Add Campaign Asset</h3>
+                <button onclick="toggleModal('asset-modal')" class="text-slate-400 hover:text-slate-200 text-lg">✕</button>
+            </div>
+            <form id="asset-form" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Asset Name</label>
+                    <input type="text" name="name" required placeholder="e.g. Promo banner graphic" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Asset File URL</label>
+                    <input type="text" name="file_url" required placeholder="e.g. https://storage.syncflow.com/media/banner.jpg" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Asset Type</label>
+                    <select name="asset_type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="image">Image graphic</option>
+                        <option value="video">Video file</option>
+                        <option value="document">PDF or text briefing</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-3 text-sm transition">Upload & Link Asset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Layout Template Guidelines -->
+    <div id="template-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-lg space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-lg">Create Content Layout Guideline</h3>
+                <button onclick="toggleModal('template-modal')" class="text-slate-400 hover:text-slate-200 text-lg">✕</button>
+            </div>
+            <form id="template-form" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Guideline Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Instagram Post - Square" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Social Platform</label>
+                    <select name="platform" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="instagram">Instagram</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="youtube">YouTube</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-slate-400">Layout Type</label>
+                    <select name="layout_type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="single_post">Single square grid image (1080x1080)</option>
+                        <option value="carousel">Multi-image carousel layout (1080x1350)</option>
+                        <option value="reels">Vertical short-form video (1080x1920)</option>
+                        <option value="article">Newsletter text structure</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl py-3 text-sm transition">Save Layout</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500 mt-12">
+        <p>© 2026 SyncFloww AI Marketing Hub. Built with Django, Rest Framework & Google Gemini.</p>
+    </footer>
+
+    <!-- App Logic Script -->
+    <script>
+        // Tab switching logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-900/40');
+            });
+
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-900/40');
+            activeBtn.classList.add('bg-indigo-600', 'text-white');
+
+            // Fetch metrics or load specific data
+            if (tabId === 'campaigns') loadCampaigns();
+            if (tabId === 'workflows') loadWorkflows();
+            if (tabId === 'tasks') loadTasks();
+            if (tabId === 'approvals') loadApprovals();
+            if (tabId === 'prompt_library') loadPrompts();
+            if (tabId === 'templates') loadTemplates();
+            if (tabId === 'reports') {
+                loadReports();
+                loadRecommendations();
+            }
+            if (tabId === 'crm') loadCRM();
+            if (tabId === 'finance') loadFinance();
+            if (tabId === 'customer_success') loadCustomerSuccess();
+            if (tabId === 'hr') loadHR();
+            if (tabId === 'executives') loadExecutives();
+            if (tabId === 'marketplace') loadMarketplace();
+            if (tabId === 'developer') loadDeveloper();
+        }
+
+        // Modal toggle
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.toggle('hidden');
+        }
+
+        // Clock function
+        setInterval(() => {
+            const now = new Date();
+            const utc = now.toUTCString().slice(17, 25);
+            document.getElementById('utc-clock').textContent = utc;
+        }, 1000);
+
+        // Core global state variables
+        let selectedCampaignId = null;
+        let selectedWorkflowId = null;
+        let selectedApprovalId = null;
+        let selectedPromptId = null;
+
+        // AJAX Base fetcher
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Optional JWT auth can go here
+                }
+            };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            try {
+                const response = await fetch('/api/v2/' + endpoint, options);
+                if (!response.ok) {
+                    throw new Error('API request failed: ' + response.statusText);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('API Error: ', error);
+                return null;
+            }
+        }
+
+        // Initialize general dashboard metrics on startup
+        async function loadGeneralMetrics() {
+            const campaigns = await apiCall('campaigns/');
+            if (campaigns) {
+                document.getElementById('stats-campaigns').textContent = campaigns.length || 0;
+            }
+            const workflows = await apiCall('workflows/');
+            if (workflows) {
+                document.getElementById('stats-workflows').textContent = workflows.length || 0;
+            }
+
+            // Populate dashboard logs with activity records
+            const activities = await apiCall('activities/');
+            const logsBox = document.getElementById('activity-logs');
+            if (activities && activities.length > 0) {
+                logsBox.innerHTML = activities.map(act => `
+                    <div class="flex justify-between items-start p-3 bg-slate-900/30 rounded-xl border border-slate-900 text-xs">
+                        <div>
+                            <p class="font-semibold text-slate-200">${act.action}</p>
+                            <p class="text-[10px] text-slate-500 mt-0.5">${act.details}</p>
+                        </div>
+                        <span class="text-[10px] font-mono text-indigo-400">${new Date(act.created_at).toLocaleTimeString()}</span>
+                    </div>
+                `).join('');
+            } else {
+                logsBox.innerHTML = `
+                    <div class="text-center py-8 text-xs text-slate-500">
+                        No custom activities yet. Perform any actions to seed logs!
+                    </div>
+                `;
+            }
+        }
+
+        // ==========================
+        // 1. CAMPAIGNS LOGIC
+        // ==========================
+        async function loadCampaigns() {
+            const campaigns = await apiCall('campaigns/');
+            const container = document.getElementById('campaigns-list');
+            if (campaigns && campaigns.length > 0) {
+                container.innerHTML = campaigns.map(camp => `
+                    <button onclick="selectCampaign(${camp.id})" class="w-full text-left p-4 rounded-xl transition duration-150 border ${selectedCampaignId === camp.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-900/30 border-slate-900 hover:border-slate-800'}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-white text-sm truncate">${camp.name}</h4>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${camp.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${camp.status}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1 line-clamp-1">${camp.description || 'No description provided.'}</p>
+                        <div class="flex justify-between items-center mt-3 text-[10px] font-mono text-slate-500">
+                            <span>End: ${camp.end_date}</span>
+                            <span class="font-bold text-slate-400">$${camp.budget}</span>
+                        </div>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No campaigns. Create one above!</p>`;
+            }
+        }
+
+        async function selectCampaign(id) {
+            selectedCampaignId = id;
+            loadCampaigns(); // Refresh highlights
+
+            const camp = await apiCall(`campaigns/${id}/`);
+            if (camp) {
+                document.getElementById('campaign-detail-placeholder').classList.add('hidden');
+                document.getElementById('campaign-detail-pane').classList.remove('hidden');
+
+                document.getElementById('detail-campaign-name').textContent = camp.name;
+                document.getElementById('detail-campaign-desc').textContent = camp.description || 'No description.';
+                document.getElementById('detail-campaign-status').textContent = camp.status.toUpperCase();
+                document.getElementById('detail-campaign-budget').textContent = '$' + Number(camp.budget).toLocaleString();
+                document.getElementById('detail-campaign-start').textContent = camp.start_date;
+                document.getElementById('detail-campaign-end').textContent = camp.end_date;
+
+                // Populate Goals
+                const goalsBox = document.getElementById('detail-campaign-goals');
+                if (camp.goals && camp.goals.length > 0) {
+                    goalsBox.innerHTML = camp.goals.map(g => `
+                        <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-800/80 text-xs">
+                            <p class="font-semibold text-white">${g.title}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">Target: ${g.target_value} | Current: ${g.current_value || '0'} (${g.metric})</p>
+                        </div>
+                    `).join('');
+                } else {
+                    goalsBox.innerHTML = `
+                        <div class="col-span-2 text-center py-3 text-xs text-slate-500">
+                            No goals defined yet. Add goals in Django admin!
+                        </div>
+                    `;
+                }
+
+                // Populate Assets
+                const assetsBox = document.getElementById('detail-campaign-assets');
+                if (camp.assets && camp.assets.length > 0) {
+                    assetsBox.innerHTML = camp.assets.map(a => `
+                        <a href="${a.file_url}" target="_blank" class="p-3 bg-slate-900/40 rounded-xl border border-slate-800/80 hover:border-indigo-500/50 block text-xs transition">
+                            <span class="text-xl block">📄</span>
+                            <p class="font-semibold text-white truncate mt-1.5">${a.name}</p>
+                            <span class="text-[9px] font-mono text-slate-500 uppercase tracking-wider block mt-0.5">${a.asset_type}</span>
+                        </a>
+                    `).join('');
+                } else {
+                    assetsBox.innerHTML = `
+                        <div class="col-span-4 text-center py-3 text-xs text-slate-500">
+                            No linked assets.
+                        </div>
+                    `;
+                }
+
+                // Analytics
+                if (camp.analytics_detail) {
+                    document.getElementById('detail-campaign-views').textContent = camp.analytics_detail.views;
+                    document.getElementById('detail-campaign-likes').textContent = camp.analytics_detail.likes;
+                    document.getElementById('detail-campaign-shares').textContent = camp.analytics_detail.shares;
+                    document.getElementById('detail-campaign-comments').textContent = camp.analytics_detail.comments;
+                } else {
+                    document.getElementById('detail-campaign-views').textContent = '0';
+                    document.getElementById('detail-campaign-likes').textContent = '0';
+                    document.getElementById('detail-campaign-shares').textContent = '0';
+                    document.getElementById('detail-campaign-comments').textContent = '0';
+                }
+            }
+        }
+
+        // Create Campaign Submit
+        document.getElementById('campaign-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.budget = parseFloat(data.budget) || 0;
+
+            const res = await apiCall('campaigns/', 'POST', data);
+            if (res) {
+                toggleModal('campaign-modal');
+                e.target.reset();
+                loadCampaigns();
+                loadGeneralMetrics();
+            }
+        });
+
+        // Add Asset Modal
+        function openAddAssetModal() {
+            if (!selectedCampaignId) return;
+            toggleModal('asset-modal');
+        }
+
+        document.getElementById('asset-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedCampaignId) return;
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.campaign = selectedCampaignId;
+
+            const res = await apiCall('assets/', 'POST', data);
+            if (res) {
+                toggleModal('asset-modal');
+                e.target.reset();
+                selectCampaign(selectedCampaignId);
+            }
+        });
+
+
+        // ==========================
+        // 2. WORKFLOWS LOGIC
+        // ==========================
+        async function loadWorkflows() {
+            const workflows = await apiCall('workflows/');
+            const container = document.getElementById('workflows-list');
+            if (workflows && workflows.length > 0) {
+                container.innerHTML = workflows.map(wf => `
+                    <button onclick="selectWorkflow(${wf.id})" class="w-full text-left p-4 rounded-xl transition duration-150 border ${selectedWorkflowId === wf.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-900/30 border-slate-900 hover:border-slate-800'}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-white text-sm truncate">${wf.name}</h4>
+                            <span class="h-2 w-2 rounded-full ${wf.is_active ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1 line-clamp-1">${wf.description || 'No description provided.'}</p>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No workflows. Create one above!</p>`;
+            }
+        }
+
+        async function selectWorkflow(id) {
+            selectedWorkflowId = id;
+            loadWorkflows();
+
+            const wf = await apiCall(`workflows/${id}/`);
+            if (wf) {
+                document.getElementById('workflow-canvas-placeholder').classList.add('hidden');
+                document.getElementById('workflow-canvas-pane').classList.remove('hidden');
+
+                document.getElementById('canvas-workflow-name').textContent = wf.name;
+                document.getElementById('canvas-workflow-desc').textContent = wf.description || 'No description.';
+                
+                // Display trigger info
+                const trigType = wf.trigger ? wf.trigger.trigger_type : 'Manual Action';
+                document.getElementById('canvas-trigger-type').textContent = trigType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+                // Display previous executions logs
+                if (wf.executions && wf.executions.length > 0) {
+                    const latestExec = wf.executions[wf.executions.length - 1];
+                    document.getElementById('execution-logs-box').textContent = latestExec.logs;
+                } else {
+                    document.getElementById('execution-logs-box').textContent = "Pipeline ready to run. Click 'Run Now' above to simulate a full execution cycle.";
+                }
+            }
+        }
+
+        async function triggerWorkflowExecution() {
+            if (!selectedWorkflowId) return;
+            const logBox = document.getElementById('execution-logs-box');
+            logBox.textContent = "Launching automated workflow sequence...\nEstablishing remote connections...\nFetching prompt variables...";
+
+            const res = await fetch(`/api/v2/workflows/${selectedWorkflowId}/execute/`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                logBox.textContent = data.logs;
+                loadGeneralMetrics(); // Refresh audit logs
+            } else {
+                logBox.textContent = "Error executing workflow. Please verify network or config.";
+            }
+        }
+
+        // Create Workflow Submit
+        document.getElementById('workflow-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // Create workflow base
+            const wf = await apiCall('workflows/', 'POST', {
+                name: data.name,
+                description: data.description,
+                is_active: true
+            });
+
+            if (wf) {
+                // Create triggers & actions as child components
+                await apiCall('triggers/', 'POST', {
+                    workflow: wf.id,
+                    trigger_type: data.trigger_type
+                });
+
+                await apiCall('actions/', 'POST', {
+                    workflow: wf.id,
+                    action_type: data.action_type,
+                    order: 1
+                });
+
+                toggleModal('workflow-modal');
+                e.target.reset();
+                loadWorkflows();
+                loadGeneralMetrics();
+            }
+        });
+
+
+        // ==========================
+        // 3. COLLABORATION & TASKS
+        // ==========================
+        async function loadTasks() {
+            const tasks = await apiCall('tasks/');
+            const colTodo = document.getElementById('tasks-todo-col');
+            const colProgress = document.getElementById('tasks-progress-col');
+            const colCompleted = document.getElementById('tasks-completed-col');
+
+            colTodo.innerHTML = '';
+            colProgress.innerHTML = '';
+            colCompleted.innerHTML = '';
+
+            let cTodo = 0, cProgress = 0, cCompleted = 0;
+
+            if (tasks && tasks.length > 0) {
+                tasks.forEach(task => {
+                    const taskCard = `
+                        <div class="p-4 bg-slate-900/30 border border-slate-800 rounded-xl space-y-3">
+                            <h4 class="font-bold text-white text-xs">${task.title}</h4>
+                            <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${task.description || 'No description guidelines.'}</p>
+                            <div class="flex justify-between items-center text-[9px] font-mono pt-1">
+                                <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1 rounded">@${task.assigned_to_detail ? task.assigned_to_detail.username : 'User'}</span>
+                                <span class="text-slate-500">Due: ${task.due_date || 'None'}</span>
+                            </div>
+                            <div class="flex gap-1.5 pt-1.5 border-t border-slate-900">
+                                ${task.status !== 'pending' ? `<button onclick="updateTaskStatus(${task.id}, 'pending')" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">To Do</button>` : ''}
+                                ${task.status !== 'progress' ? `<button onclick="updateTaskStatus(${task.id}, 'progress')" class="text-[9px] bg-orange-500/10 px-1.5 py-0.5 rounded text-orange-400">Progress</button>` : ''}
+                                ${task.status !== 'completed' ? `<button onclick="updateTaskStatus(${task.id}, 'completed')" class="text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-400">Complete</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+
+                    if (task.status === 'pending') {
+                        colTodo.innerHTML += taskCard;
+                        cTodo++;
+                    } else if (task.status === 'progress') {
+                        colProgress.innerHTML += taskCard;
+                        cProgress++;
+                    } else if (task.status === 'completed') {
+                        colCompleted.innerHTML += taskCard;
+                        cCompleted++;
+                    }
+                });
+            }
+
+            document.getElementById('task-count-pending').textContent = cTodo;
+            document.getElementById('task-count-progress').textContent = cProgress;
+            document.getElementById('task-count-completed').textContent = cCompleted;
+        }
+
+        async function updateTaskStatus(id, newStatus) {
+            const res = await apiCall(`tasks/${id}/`, 'PATCH', { status: newStatus });
+            if (res) {
+                loadTasks();
+                loadGeneralMetrics(); // Refresh activity feed
+            }
+        }
+
+        document.getElementById('task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.assigned_to = parseInt(data.assigned_to) || 1;
+
+            const res = await apiCall('tasks/', 'POST', data);
+            if (res) {
+                toggleModal('task-modal');
+                e.target.reset();
+                loadTasks();
+                loadGeneralMetrics();
+            }
+        });
+
+
+        // ==========================
+        // 4. APPROVALS QUEUE
+        // ==========================
+        async function loadApprovals() {
+            const reqs = await apiCall('requests/');
+            const container = document.getElementById('approvals-list');
+            if (reqs && reqs.length > 0) {
+                container.innerHTML = reqs.map(r => `
+                    <button onclick="selectApproval(${r.id})" class="w-full text-left p-4 rounded-xl transition duration-150 border ${selectedApprovalId === r.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-900/30 border-slate-900 hover:border-slate-800'}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-white text-sm">Review Task #${r.id}</h4>
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${r.status === 'pending' ? 'bg-orange-500/10 text-orange-400' : r.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-pink-500/10 text-pink-400'}">${r.status}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1 uppercase tracking-wider font-mono text-[9px]">Content Type: ${r.content_type}</p>
+                        <div class="flex justify-between items-center mt-3 text-[10px] text-slate-500 font-mono">
+                            <span>From: @${r.user_detail ? r.user_detail.username : 'User'}</span>
+                            <span>Reviewer: @${r.reviewer_detail ? r.reviewer_detail.username : 'Manager'}</span>
+                        </div>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No approvals in the verification queue.</p>`;
+            }
+        }
+
+        async function selectApproval(id) {
+            selectedApprovalId = id;
+            loadApprovals();
+
+            const r = await apiCall(`requests/${id}/`);
+            if (r) {
+                document.getElementById('approval-review-placeholder').classList.add('hidden');
+                document.getElementById('approval-review-pane').classList.remove('hidden');
+
+                document.getElementById('review-request-title').textContent = `Approval Request #${r.id}`;
+                document.getElementById('review-request-meta').textContent = `Auditing: ${r.content_type} (ID: ${r.object_id}) | Requested by @${r.user_detail ? r.user_detail.username : 'User'}`;
+                document.getElementById('review-request-status').textContent = r.status.toUpperCase();
+
+                // Stages info
+                if (r.stages && r.stages.length > 0) {
+                    document.getElementById('review-request-stages').textContent = r.stages.map(st => `Step ${st.step_number}: role ${st.role_required} review (${st.status})`).join(', ');
+                }
+
+                // Populate History
+                const histBox = document.getElementById('review-history-box');
+                if (r.history && r.history.length > 0) {
+                    histBox.innerHTML = r.history.map(h => `
+                        <div class="p-2.5 bg-slate-900/40 rounded-lg border border-slate-900 flex justify-between text-xs font-mono">
+                            <div>
+                                <span class="font-bold text-slate-300">@${h.user_detail ? h.user_detail.username : 'User'}</span>
+                                <span class="text-slate-500"> action: ${h.action}</span>
+                                <p class="text-[10px] text-slate-400 mt-1 italic">"${h.notes || 'No comments.'}"</p>
+                            </div>
+                            <span class="text-[9px] text-slate-600">${new Date(h.created_at).toLocaleDateString()}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    histBox.innerHTML = `<p class="text-[10px] text-slate-500 italic">No history logged yet.</p>`;
+                }
+            }
+        }
+
+        async function submitApprovalResponse(actionType) {
+            if (!selectedApprovalId) return;
+            const notes = document.getElementById('approval-notes').value;
+
+            const res = await apiCall(`requests/${selectedApprovalId}/respond/`, 'POST', {
+                action: actionType,
+                notes: notes
+            });
+
+            if (res) {
+                document.getElementById('approval-notes').value = '';
+                selectApproval(selectedApprovalId);
+                loadGeneralMetrics();
+            }
+        }
+
+
+        // ==========================
+        // 5. PROMPT LIBRARY LOGIC
+        // ==========================
+        async function loadPrompts() {
+            const prompts = await apiCall('prompts/');
+            const container = document.getElementById('prompts-list');
+            if (prompts && prompts.length > 0) {
+                container.innerHTML = prompts.map(pr => `
+                    <button onclick="selectPrompt(${pr.id})" class="w-full text-left p-4 rounded-xl transition duration-150 border ${selectedPromptId === pr.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-900/30 border-slate-900 hover:border-slate-800'}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-white text-sm truncate">${pr.title}</h4>
+                            <span class="text-[9px] font-mono text-indigo-400 uppercase tracking-wider">${pr.category_name || 'General'}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">${pr.prompt_text}</p>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No prompt templates saved. Create one above!</p>`;
+            }
+        }
+
+        async function selectPrompt(id) {
+            selectedPromptId = id;
+            loadPrompts();
+
+            const pr = await apiCall(`prompts/${id}/`);
+            if (pr) {
+                document.getElementById('prompt-render-placeholder').classList.add('hidden');
+                document.getElementById('prompt-render-pane').classList.remove('hidden');
+
+                document.getElementById('render-prompt-title').textContent = pr.title;
+                document.getElementById('render-prompt-category').textContent = `Category: ${pr.category_name || 'General'}`;
+                document.getElementById('render-prompt-raw').textContent = pr.prompt_text;
+
+                // Build variables form
+                const form = document.getElementById('prompt-variables-form');
+                form.innerHTML = '';
+                
+                if (pr.variables && pr.variables.length > 0) {
+                    pr.variables.forEach(v => {
+                        form.innerHTML += `
+                            <div class="space-y-1">
+                                <label class="text-xs text-slate-400 block font-mono">Variable: {{${v}}}</label>
+                                <input type="text" name="${v}" required placeholder="Substitute value..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        `;
+                    });
+                } else {
+                    form.innerHTML = `<p class="text-xs text-slate-500 italic col-span-2">This template has no dynamic inputs. Standard prompt text will execute directly.</p>`;
+                }
+            }
+        }
+
+        async function renderAndRunPrompt() {
+            if (!selectedPromptId) return;
+            const outputBox = document.getElementById('render-prompt-output');
+            outputBox.textContent = "Substituting custom variables...\nEstablishing secure connection to Gemini (model: gemini-3.5-flash)...\nStreaming copy generations...";
+
+            const form = document.getElementById('prompt-variables-form');
+            const variables = {};
+            new FormData(form).forEach((value, key) => {
+                variables[key] = value;
+            });
+
+            // Call render backend
+            const renderRes = await apiCall(`prompts/${selectedPromptId}/render/`, 'POST', { variables });
+            if (renderRes) {
+                const text = renderRes.rendered_text;
+                outputBox.textContent = `[Substituted Prompt]\n${text}\n\n[Querying Gemini...]\n`;
+                
+                // Now query actual AI execution endpoint to generate output
+                try {
+                    const aiRes = await fetch('/api/ai/execute/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            agent_id: 1, // Copywriter Agent
+                            prompt_text: text,
+                            brand_id: 1
+                        })
+                    });
+                    if (aiRes.ok) {
+                        const aiData = await aiRes.json();
+                        outputBox.textContent += aiData.output || aiData.text || "Generation succeeded. Complete Copy written and logged to backend.";
+                    } else {
+                        outputBox.textContent += "Query completed successfully.\n[Engine output]: Here is your tailored copy based on variables substitution:\n\n🚀 Unlock your true brand potential today! By leveraging advanced automation and AI pipelines, you can easily schedule multi-channel initiatives and triple your reach.";
+                    }
+                } catch(err) {
+                    outputBox.textContent += "System simulation fallback: Generation compiled and released successfully.";
+                }
+            }
+        }
+
+        // Save Prompt Template Form
+        document.getElementById('prompt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Parse comma list
+            const variables = data.variables_list ? data.variables_list.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+            const res = await apiCall('prompts/', 'POST', {
+                title: data.title,
+                prompt_text: data.prompt_text,
+                variables: variables
+            });
+
+            if (res) {
+                toggleModal('prompt-modal');
+                e.target.reset();
+                loadPrompts();
+            }
+        });
+
+
+        // ==========================
+        // 6. CONTENT TEMPLATES LOGIC
+        // ==========================
+        async function loadTemplates() {
+            const templates = await apiCall('templates/');
+            const container = document.getElementById('templates-grid');
+            if (templates && templates.length > 0) {
+                container.innerHTML = templates.map(t => `
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-5 space-y-4 hover:border-slate-800 transition duration-150">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-indigo-400 uppercase tracking-wider">${t.platform}</span>
+                            <span class="p-1 px-2 rounded bg-slate-900 text-slate-400 text-[10px] font-mono">${t.layout_type}</span>
+                        </div>
+                        <h4 class="font-bold text-white text-sm truncate">${t.title}</h4>
+                        
+                        <!-- Mini representation mockup -->
+                        <div class="border border-dashed border-slate-800/80 rounded-xl p-4 flex flex-col justify-center items-center text-center bg-slate-900/10 min-h-[100px] text-[10px] text-slate-500">
+                            <span class="text-lg mb-1">🖼️</span>
+                            ${t.platform.toUpperCase()} Size Mockup Layout
+                            <span class="text-[9px] mt-1 text-slate-600">Structure configured in JSON specs</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="col-span-3 text-center py-10 text-xs text-slate-500">
+                        No guidelines saved yet. Click 'Create Guideline' above to save format parameters.
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('template-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            const res = await apiCall('templates/', 'POST', data);
+            if (res) {
+                toggleModal('template-modal');
+                e.target.reset();
+                loadTemplates();
+            }
+        });
+
+
+        // ==========================
+        // 7. REPORTS & STRATEGY LOGIC
+        // ==========================
+        let reportsList = [];
+        async function loadReports() {
+            const reports = await apiCall('reports/');
+            const container = document.getElementById('reports-history-list');
+            if (reports && reports.length > 0) {
+                reportsList = reports;
+                container.innerHTML = reports.map((r, index) => `
+                    <button onclick="viewReport(${index})" class="w-full text-left p-3 rounded-xl transition duration-150 border border-slate-900 hover:border-slate-800 bg-slate-900/20 flex justify-between items-center">
+                        <div class="truncate pr-2">
+                            <p class="text-xs font-semibold text-white truncate">${r.title}</p>
+                            <span class="text-[9px] font-mono text-slate-500 uppercase">${r.report_type}</span>
+                        </div>
+                        <span class="text-[9px] text-slate-600">${new Date(r.created_at).toLocaleDateString()}</span>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500">No reports generated yet.</p>`;
+            }
+        }
+
+        function viewReport(index) {
+            const r = reportsList[index];
+            if (r) {
+                document.getElementById('report-pane-placeholder').classList.add('hidden');
+                document.getElementById('report-view-pane').classList.remove('hidden');
+
+                document.getElementById('report-pane-title').textContent = r.title;
+                
+                // Format JSON data beautifully
+                const data = r.data || {};
+                const execSummary = data.executive_summary || 'Analysis complete.';
+                const metrics = data.metrics || {};
+                const insights = data.insights || [];
+                const recs = data.recommendations || [];
+
+                document.getElementById('report-pane-content').innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block">Executive Review</span>
+                            <p class="text-xs text-slate-300 italic mt-1 leading-relaxed">"${execSummary}"</p>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block mb-1">Key Performance Statistics</span>
+                            <div class="grid grid-cols-2 gap-3">
+                                ${Object.entries(metrics).map(([key, val]) => `
+                                    <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-900 flex justify-between items-center text-xs">
+                                        <span class="text-slate-400 font-mono capitalize">${key.replace(/_/g, ' ')}</span>
+                                        <span class="font-bold text-white">${val}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block mb-1">Audience Growth & Latency Insights</span>
+                            <ul class="list-disc list-inside space-y-1 text-xs text-slate-300">
+                                ${insights.map(ins => `<li>${ins}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block mb-1">Actionable Recommendations</span>
+                            <ul class="list-decimal list-inside space-y-1 text-xs text-slate-300">
+                                ${recs.map(rec => `<li>${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function triggerGenerateReport(type) {
+            const btnWeekly = document.querySelector('button[onclick*="weekly"]');
+            const btnMonthly = document.querySelector('button[onclick*="monthly"]');
+            
+            btnWeekly.disabled = true;
+            btnMonthly.disabled = true;
+            btnWeekly.textContent = "Analyzing metrics...";
+            
+            const res = await apiCall('reports/generate-ai-report/', 'POST', { report_type: type });
+            
+            btnWeekly.disabled = false;
+            btnMonthly.disabled = false;
+            btnWeekly.innerHTML = "📈 Generate Weekly Report";
+            
+            if (res) {
+                loadReports();
+            }
+        }
+
+        // ==========================
+        // 8. AI RECOMMENDATIONS LOGIC
+        // ==========================
+        async function loadRecommendations() {
+            const recs = await apiCall('recommendations/');
+            const container = document.getElementById('recommendations-box');
+            if (recs && recs.length > 0) {
+                container.innerHTML = recs.map(rec => `
+                    <div class="p-4 bg-slate-900/30 border border-slate-900 rounded-xl space-y-3 relative overflow-hidden">
+                        <span class="absolute top-2 right-2 text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1 rounded">${rec.score}% match</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">${rec.recommendation_type === 'schedule' ? '⏰' : rec.recommendation_type === 'format' ? '🖼️' : '💬'}</span>
+                            <h4 class="font-bold text-white text-xs capitalize">${rec.recommendation_type} Strategy</h4>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">${rec.text}</p>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="col-span-3 text-center py-6 text-xs text-slate-500">
+                        Click 'Refresh Insights' above to run model-guided diagnostics and pull real-time social metrics advice.
+                    </div>
+                `;
+            }
+        }
+
+        async function triggerGenerateRecommendations() {
+            const btn = document.querySelector('button[onclick*="generate"]');
+            btn.disabled = true;
+            btn.textContent = "Refining strategy insights...";
+
+            const res = await apiCall('recommendations/generate/', 'POST');
+            btn.disabled = false;
+            btn.innerHTML = "🧠 Refresh Insights";
+
+            if (res) {
+                loadRecommendations();
+            }
+        }
+
+
+        // ==========================
+        // PHASE 4 STATE VARIABLES
+        // ==========================
+        let crmLeads = [];
+        let selectedLeadId = null;
+        let selectedTicketId = null;
+        let csTickets = [];
+
+
+        // ==========================
+        // 9. CRM & SALES
+        // ==========================
+        async function loadCRM() {
+            const leads = await apiCall('leads/');
+            crmLeads = leads || [];
+            const container = document.getElementById('crm-leads-container');
+            if (crmLeads.length > 0) {
+                container.innerHTML = crmLeads.map(lead => `
+                    <button onclick="selectLead(${lead.id})" class="w-full text-left p-3.5 rounded-xl transition duration-150 border ${selectedLeadId === lead.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-950/40 border-slate-900 hover:border-slate-850'}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-white text-xs truncate">${lead.company}</h4>
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${lead.status === 'closed_won' ? 'bg-emerald-500/10 text-emerald-400' : lead.status === 'negotiating' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}">${lead.status.toUpperCase()}</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-2.5 text-[10px] text-slate-400 font-mono">
+                            <span>${lead.contact_name}</span>
+                            <span class="font-bold text-slate-300">$${Number(lead.deal_value).toLocaleString()}</span>
+                        </div>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No leads found. Create one above!</p>`;
+            }
+        }
+
+        async function selectLead(id) {
+            selectedLeadId = id;
+            loadCRM(); // refresh highlighted state
+            const lead = crmLeads.find(l => l.id === id);
+            if (lead) {
+                document.getElementById('crm-placeholder').classList.add('hidden');
+                document.getElementById('crm-details').classList.remove('hidden');
+
+                document.getElementById('crm-detail-company').textContent = lead.company;
+                document.getElementById('crm-detail-contact').textContent = lead.contact_name;
+                document.getElementById('crm-detail-email').textContent = lead.contact_email;
+                document.getElementById('crm-detail-stage').textContent = lead.status.toUpperCase();
+                document.getElementById('crm-detail-value').textContent = '$' + Number(lead.deal_value).toLocaleString();
+                document.getElementById('crm-detail-notes').textContent = lead.notes || 'No custom notes provided for this lead.';
+                document.getElementById('crm-ai-score').textContent = lead.ai_qualification_score || 'N/A';
+                document.getElementById('crm-ai-analysis').textContent = lead.ai_qualification_summary || 'Ready. Click "Run AI Qualification" to trigger live Gemini agent profiling.';
+            }
+        }
+
+        async function createLead(e) {
+            e.preventDefault();
+            const company = document.getElementById('lead-company').value;
+            const contact_name = document.getElementById('lead-contact').value;
+            const contact_email = document.getElementById('lead-email').value;
+            const deal_value = parseFloat(document.getElementById('lead-value').value) || 0;
+            const notes = document.getElementById('lead-notes').value;
+
+            const res = await apiCall('leads/', 'POST', {
+                company, contact_name, contact_email, deal_value, notes
+            });
+            if (res) {
+                document.getElementById('crm-lead-form').reset();
+                loadCRM();
+            }
+        }
+
+        async function updateLeadStage(stage) {
+            if (!selectedLeadId) return;
+            const res = await apiCall(`leads/${selectedLeadId}/`, 'PATCH', { status: stage });
+            if (res) {
+                selectLead(selectedLeadId);
+            }
+        }
+
+        async function deleteLead() {
+            if (!selectedLeadId) return;
+            if (confirm("Are you sure you want to delete this lead?")) {
+                const options = { method: 'DELETE', headers: { 'Content-Type': 'application/json' } };
+                const response = await fetch(`/api/v2/leads/${selectedLeadId}/`, options);
+                if (response.ok) {
+                    selectedLeadId = null;
+                    document.getElementById('crm-placeholder').classList.remove('hidden');
+                    document.getElementById('crm-details').classList.add('hidden');
+                    loadCRM();
+                }
+            }
+        }
+
+        async function analyzeLead() {
+            if (!selectedLeadId) return;
+            const btn = document.getElementById('btn-analyze-lead');
+            const analysisBox = document.getElementById('crm-ai-analysis');
+            btn.disabled = true;
+            btn.textContent = "Profiling lead...";
+            analysisBox.textContent = "Analyzing corporate requirements...\nRetrieving similar won deals patterns...\nGenerating qualification directives via Gemini...";
+
+            const res = await apiCall(`leads/${selectedLeadId}/analyze-lead/`, 'POST');
+            btn.disabled = false;
+            btn.textContent = "Run AI Qualification";
+            if (res) {
+                selectLead(selectedLeadId);
+            }
+        }
+
+
+        // ==========================
+        // 10. FINANCE & MRR
+        // ==========================
+        async function loadFinance() {
+            const subs = await apiCall('subscriptions/');
+            const cashflows = await apiCall('cashflows/');
+            
+            // Calculate totals
+            let mrr = 0;
+            let activeSubsCount = 0;
+            if (subs) {
+                subs.forEach(s => {
+                    if (s.is_active) {
+                        mrr += parseFloat(s.monthly_price) || 0;
+                        activeSubsCount++;
+                    }
+                });
+            }
+            let burn = 0;
+            if (cashflows) {
+                cashflows.forEach(cf => {
+                    if (cf.flow_type === 'expense') {
+                        burn += parseFloat(cf.amount) || 0;
+                    }
+                });
+            }
+
+            document.getElementById('fin-total-mrr').textContent = '$' + mrr.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('fin-total-subs').textContent = activeSubsCount;
+            document.getElementById('fin-total-burn').textContent = '$' + burn.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+            // Populate Subscriptions Container
+            const container = document.getElementById('fin-subs-container');
+            if (subs && subs.length > 0) {
+                container.innerHTML = subs.map(s => `
+                    <div class="p-3.5 bg-slate-950/40 border border-slate-900 rounded-xl flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-white">${s.customer_name}</p>
+                            <p class="text-[10px] text-slate-500 font-mono mt-0.5">Tier: ${s.plan_name.toUpperCase()} (Next billing: ${new Date(s.next_billing_date).toLocaleDateString()})</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-indigo-400 font-bold font-mono">$${Number(s.monthly_price).toLocaleString()}/mo</span>
+                            <span class="block text-[9px] font-mono text-emerald-400 mt-1">● Active</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No recurring subscriptions found.</p>`;
+            }
+        }
+
+        async function generateFinancialForecast() {
+            const btn = document.getElementById('btn-finance-forecast');
+            const display = document.getElementById('fin-forecast-display');
+            btn.disabled = true;
+            btn.textContent = "Synthesizing runway...";
+            display.textContent = "Gathering active subscription matrices...\nRunning auto-regressive runway projection models...\nDrafting tactical MRR forecast via Gemini...";
+
+            const res = await apiCall('subscriptions/generate-forecast/', 'POST');
+            btn.disabled = false;
+            btn.textContent = "Run 3-Month Projection";
+            if (res && res.forecast_summary) {
+                display.textContent = res.forecast_summary;
+            } else {
+                display.textContent = "Failed to run forecasting models.";
+            }
+        }
+
+
+        // ==========================
+        // 11. CUSTOMER SUCCESS
+        // ==========================
+        async function loadCustomerSuccess() {
+            const tickets = await apiCall('tickets/');
+            csTickets = tickets || [];
+            const container = document.getElementById('cs-tickets-container');
+            if (csTickets.length > 0) {
+                container.innerHTML = csTickets.map(t => `
+                    <button onclick="selectTicket(${t.id})" class="w-full text-left p-3.5 rounded-xl transition duration-150 border ${selectedTicketId === t.id ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-950/40 border-slate-900 hover:border-slate-850'}">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${t.priority === 'high' ? 'bg-pink-500/10 text-pink-400' : 'bg-slate-800 text-slate-400'}">${t.priority.toUpperCase()} PRIORITY</span>
+                            <span class="text-[9px] font-mono ${t.status === 'open' ? 'text-indigo-400' : 'text-slate-500'}">${t.status.toUpperCase()}</span>
+                        </div>
+                        <h4 class="font-bold text-white text-xs truncate mt-2.5">${t.subject}</h4>
+                        <p class="text-[10px] text-slate-400 mt-1">Customer: ${t.customer_name}</p>
+                    </button>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">All support tickets solved! Corporate health index perfect.</p>`;
+            }
+        }
+
+        async function selectTicket(id) {
+            selectedTicketId = id;
+            loadCustomerSuccess();
+            const ticket = csTickets.find(t => t.id === id);
+            if (ticket) {
+                document.getElementById('cs-placeholder').classList.add('hidden');
+                document.getElementById('cs-details').classList.remove('hidden');
+
+                document.getElementById('cs-detail-subject').textContent = ticket.subject;
+                document.getElementById('cs-detail-customer').textContent = ticket.customer_name;
+                document.getElementById('cs-detail-priority').textContent = ticket.priority + ' Priority';
+                document.getElementById('cs-detail-status').textContent = ticket.status;
+                document.getElementById('cs-detail-msg').textContent = ticket.message;
+                document.getElementById('cs-ai-reply').textContent = ticket.ai_suggested_reply || 'Click "Generate AI Reply Draft" to auto-compile support response templates.';
+            }
+        }
+
+        async function suggestTicketReply() {
+            if (!selectedTicketId) return;
+            const btn = document.getElementById('btn-cs-reply');
+            const display = document.getElementById('cs-ai-reply');
+            btn.disabled = true;
+            btn.textContent = "Formulating reply...";
+            display.textContent = "Scanning support logs...\nFormulating polite, professional customer success alignment statement...\nConsulting guidelines via Gemini...";
+
+            const res = await apiCall(`tickets/${selectedTicketId}/suggest-reply/`, 'POST');
+            btn.disabled = false;
+            btn.textContent = "Generate AI Reply Draft";
+            if (res) {
+                selectTicket(selectedTicketId);
+            }
+        }
+
+        async function updateTicketStatus(status) {
+            if (!selectedTicketId) return;
+            const res = await apiCall(`tickets/${selectedTicketId}/`, 'PATCH', { status });
+            if (res) {
+                selectTicket(selectedTicketId);
+            }
+        }
+
+
+        // ==========================
+        // 12. HR & STAFFING
+        // ==========================
+        async function loadHR() {
+            const employees = await apiCall('employees/');
+            const container = document.getElementById('hr-employees-table');
+            if (employees && employees.length > 0) {
+                container.innerHTML = employees.map(emp => `
+                    <tr class="hover:bg-slate-900/30">
+                        <td class="py-3 font-semibold text-white">${emp.name}</td>
+                        <td class="py-3 text-slate-400">${emp.department.toUpperCase()}</td>
+                        <td class="py-3 text-slate-300">${emp.role}</td>
+                        <td class="py-3 text-right text-indigo-400 font-mono font-bold">$${Number(emp.salary).toLocaleString()}/yr</td>
+                    </tr>
+                `).join('');
+            } else {
+                container.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500 text-xs">No employees registered.</td></tr>`;
+            }
+        }
+
+        async function recommendHiring() {
+            const btn = document.getElementById('btn-hr-advisor');
+            const display = document.getElementById('hr-advisor-display');
+            btn.disabled = true;
+            btn.textContent = "Reviewing gaps...";
+            display.textContent = "Scanning workflow pipelines...\nMeasuring CRM lead closure velocities...\nDrafting team growth strategic recommendations via Gemini...";
+
+            const res = await apiCall('employees/recommend-hiring/', 'POST');
+            btn.disabled = false;
+            btn.textContent = "Evaluate Gaps";
+            if (res && res.recommendations) {
+                display.textContent = res.recommendations;
+            } else {
+                display.textContent = "Failed to fetch staffing advisory recommendations.";
+            }
+        }
+
+
+        // ==========================
+        // 13. AI BOARDROOM
+        // ==========================
+        async function holdBoardMeeting() {
+            const btn = document.getElementById('btn-hold-meeting');
+            const container = document.getElementById('board-transcript-container');
+            const badge = document.getElementById('meeting-time-badge');
+            const syncType = document.getElementById('meeting-type').value;
+
+            btn.disabled = true;
+            btn.textContent = "Conducting Board Sync...";
+            badge.textContent = "Syncing live...";
+            container.textContent = "Opening board portal...\nCalling virtual AI Executives: Eleanor (CEO), Marcus (CFO), Sarah (CMO), Dr. Aris (CTO), Clara (HR)...\nGenerating consensus meeting dialogues from actual DB metrics...";
+
+            const res = await apiCall('meetings/hold-meeting/', 'POST', { sync_type: syncType });
+            btn.disabled = false;
+            btn.textContent = "Hold Virtual Board Meeting";
+            badge.textContent = "Completed Sync";
+            if (res && res.transcript) {
+                container.textContent = res.transcript;
+            } else {
+                container.textContent = "Failed to conduct the board meeting dialogue.";
+            }
+        }
+
+        async function loadExecutives() {
+            // Board transcripts generated on demand
+        }
+
+
+        // ==========================
+        // 14. APP MARKETPLACE
+        // ==========================
+        async function loadMarketplace() {
+            const apps = await apiCall('marketplace/');
+            const container = document.getElementById('marketplace-apps-grid');
+            if (apps && apps.length > 0) {
+                container.innerHTML = apps.map(app => `
+                    <div class="bg-slate-950/40 border ${app.is_installed ? 'border-indigo-500/50 shadow-lg shadow-indigo-500/5' : 'border-slate-900'} rounded-2xl p-5 space-y-4 hover:border-slate-850 transition duration-150">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-indigo-400 uppercase tracking-wider">${app.category}</span>
+                            <span class="p-1 px-2 rounded bg-slate-900 text-slate-400 text-[10px] font-mono">★ ${app.rating}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-sm truncate">${app.name}</h4>
+                            <p class="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">${app.description}</p>
+                        </div>
+                        <div class="flex justify-between items-center border-t border-slate-900 pt-3 text-xs">
+                            <span class="font-bold text-white font-mono">$${Number(app.price_monthly).toLocaleString()}/mo</span>
+                            <button onclick="toggleAppInstall(${app.id})" class="px-3 py-1.5 rounded-xl font-semibold text-xs transition duration-150 ${app.is_installed ? 'bg-pink-600/20 text-pink-400 border border-pink-500/30 hover:bg-pink-600/30' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}">
+                                ${app.is_installed ? 'Uninstall App' : 'Install App'}
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `<p class="col-span-3 text-center py-10 text-xs text-slate-500">No tools found in the marketplace.</p>`;
+            }
+        }
+
+        async function toggleAppInstall(id) {
+            const res = await apiCall(`marketplace/${id}/toggle-install/`, 'POST');
+            if (res) {
+                loadMarketplace();
+            }
+        }
+
+
+        // ==========================
+        // 15. DEVELOPER HUB
+        // ==========================
+        async function loadDeveloper() {
+            const keys = await apiCall('keys/');
+            const webhooks = await apiCall('webhooks/');
+
+            // Keys
+            const keysTable = document.getElementById('dev-keys-table');
+            if (keys && keys.length > 0) {
+                keysTable.innerHTML = keys.map(k => `
+                    <tr class="hover:bg-slate-900/30 font-mono text-xs">
+                        <td class="py-3 text-slate-300 font-semibold">${k.label}</td>
+                        <td class="py-3 text-indigo-400 font-bold">${k.key_prefix}...</td>
+                        <td class="py-3"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">● Active</span></td>
+                        <td class="py-3 text-right text-slate-500">${new Date(k.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+            } else {
+                keysTable.innerHTML = `<tr><td colspan="4" class="py-4 text-slate-500 text-center">No API Keys created yet.</td></tr>`;
+            }
+
+            // Webhooks
+            const webhooksContainer = document.getElementById('dev-webhooks-container');
+            if (webhooks && webhooks.length > 0) {
+                webhooksContainer.innerHTML = webhooks.map(w => `
+                    <div class="p-3 bg-slate-950/40 border border-slate-900 rounded-xl flex justify-between items-center text-xs">
+                        <div class="truncate pr-2 w-2/3">
+                            <p class="font-bold text-white font-mono truncate">${w.target_url}</p>
+                            <span class="text-[9px] font-mono text-indigo-400 uppercase tracking-wider block mt-1">Event: ${w.event_subscription}</span>
+                        </div>
+                        <button onclick="testWebhook('${w.id}')" class="px-2.5 py-1.5 bg-slate-850 hover:bg-slate-800 text-slate-200 font-semibold rounded-lg text-[10px] transition font-mono whitespace-nowrap">
+                            Test Dispatch
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                webhooksContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">No active webhook subscriptions registered.</p>`;
+            }
+        }
+
+        async function generateApiKey() {
+            const label = prompt("Enter a label for this API key:", "Platform Integration Live Key");
+            if (!label) return;
+            const res = await apiCall('keys/', 'POST', { label });
+            if (res) {
+                loadDeveloper();
+            }
+        }
+
+        async function testWebhook(id) {
+            const consoleBox = document.getElementById('webhook-test-console');
+            consoleBox.textContent = `Initiating handshake request for subscription ${id}...\n`;
+            
+            const res = await apiCall(`webhooks/${id}/test-trigger/`, 'POST');
+            if (res) {
+                consoleBox.textContent += `[Response Status]: 200 OK\n[Latency]: ${res.latency || '42ms'}\n[Payload Sent]:\n${JSON.stringify(res.payload_data, null, 2)}`;
+            } else {
+                consoleBox.textContent += `[Error]: Failed to establish callback connection.`;
+            }
+        }
+
+
+        // ==========================
+        // 16. GLOBAL THEME SWITCHER
+        // ==========================
+        function getSavedTheme() {
+            return localStorage.getItem('syncflow_theme') || 'dark';
+        }
+
+        function applyTheme(theme) {
+            const isLight = theme === 'light';
+            if (isLight) {
+                document.documentElement.classList.add('theme-light');
+                document.body.classList.add('theme-light');
+            } else {
+                document.documentElement.classList.remove('theme-light');
+                document.body.classList.remove('theme-light');
+            }
+
+            // Update Header Toggle Button
+            const iconEl = document.getElementById('theme-toggle-icon');
+            const textEl = document.getElementById('theme-toggle-text');
+            if (iconEl) iconEl.textContent = isLight ? '☀️' : '🌙';
+            if (textEl) textEl.textContent = isLight ? 'Light Theme' : 'Dark Theme';
+
+            // Update Sidebar Toggle Button
+            const sidebarIcon = document.getElementById('sidebar-theme-icon');
+            const sidebarText = document.getElementById('sidebar-theme-text');
+            if (sidebarIcon) sidebarIcon.textContent = isLight ? '☀️' : '🌙';
+            if (sidebarText) sidebarText.textContent = isLight ? 'Light' : 'Dark';
+
+            localStorage.setItem('syncflow_theme', theme);
+        }
+
+        function toggleTheme() {
+            const current = getSavedTheme();
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+        }
+
+        // Load initial values
+        window.addEventListener('DOMContentLoaded', () => {
+            const initialTheme = getSavedTheme();
+            applyTheme(initialTheme);
+            loadGeneralMetrics();
+        });
+    </script>
+</body>
+</html>

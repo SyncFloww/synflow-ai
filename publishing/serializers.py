@@ -1,31 +1,27 @@
 from rest_framework import serializers
-from .models import Post, PostPlatform, Schedule, PublishJob, PublishResult
+from .models import Post, PostPlatform, PublishJob, PublishLog
 
 class PostPlatformSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostPlatform
-        fields = ['id', 'social_account', 'custom_text']
-
-class ScheduleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Schedule
-        fields = ['id', 'scheduled_time', 'timezone', 'is_active', 'created_at']
+        fields = '__all__'
 
 class PostSerializer(serializers.ModelSerializer):
-    platforms = PostPlatformSerializer(many=True, read_only=True)
-    schedule = ScheduleSerializer(read_only=True)
+    platforms_detail = PostPlatformSerializer(source='platforms', many=True, read_only=True)
 
     class Meta:
         model = Post
-        fields = [
-            'id', 'workspace', 'content', 'created_by', 'post_text', 
-            'media_assets', 'status', 'platforms', 'schedule', 'created_at'
-        ]
-        read_only_fields = ['workspace', 'created_by', 'status']
+        fields = ['id', 'title', 'brand', 'workspace', 'content', 'caption', 'media_urls', 'status', 'scheduled_at', 'timezone', 'platforms_detail', 'published_at', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'published_at', 'created_at', 'updated_at']
 
-class AtomicPostCreateSerializer(serializers.Serializer):
-    content_id = serializers.UUIDField()
-    social_account_id = serializers.UUIDField()
-    scheduled_for = serializers.DateTimeField()
-    media_ids = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
-    custom_text = serializers.CharField(required=False, allow_blank=True)
+class PublishLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PublishLog
+        fields = '__all__'
+
+class PublishJobSerializer(serializers.ModelSerializer):
+    logs = PublishLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PublishJob
+        fields = '__all__'

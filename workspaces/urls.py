@@ -1,10 +1,12 @@
-from django.urls import path
-from .views import WorkspaceListCreateAPIView, WorkspaceDetailAPIView, WorkspaceMembersAPIView, WorkspaceInviteAPIView, AcceptInvitationAPIView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import WorkspaceViewSet, InvitationViewSet
+
+router = DefaultRouter()
+router.register('invitations', InvitationViewSet, basename='invitation')
+router.register('', WorkspaceViewSet, basename='workspace')
 
 urlpatterns = [
-    path("", WorkspaceListCreateAPIView.as_view()),
-    path("<uuid:pk>/", WorkspaceDetailAPIView.as_view()),
-    path("<uuid:pk>/members/", WorkspaceMembersAPIView.as_view()),
-    path("<uuid:pk>/invitations/", WorkspaceInviteAPIView.as_view()),
-    path("invitations/<uuid:token>/accept/", AcceptInvitationAPIView.as_view()),
+    path('<int:pk>/members/<int:member_id>/', WorkspaceViewSet.as_view({'patch': 'manage_member', 'delete': 'manage_member'}), name='workspace-manage-member'),
+    path('', include(router.urls)),
 ]

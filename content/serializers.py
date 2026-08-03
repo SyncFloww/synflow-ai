@@ -1,26 +1,27 @@
 from rest_framework import serializers
-from .models import Content, ContentVersion, MediaAsset, ContentFolder, ContentTag
+from .models import ContentFolder, Content, ContentVersion, ContentTag
 
-class MediaAssetSerializer(serializers.ModelSerializer):
+class ContentFolderSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MediaAsset
-        fields = ['id', 'workspace', 'uploaded_by', 'file', 'file_type', 'size_bytes', 'created_at']
-        read_only_fields = ['workspace', 'uploaded_by', 'file_type', 'size_bytes']
+        model = ContentFolder
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at']
 
 class ContentVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContentVersion
-        fields = ['id', 'text_content', 'edited_by', 'created_at']
-        read_only_fields = fields
+        fields = '__all__'
 
 class ContentSerializer(serializers.ModelSerializer):
-    versions = ContentVersionSerializer(many=True, read_only=True)
-    media_assets = MediaAssetSerializer(many=True, read_only=True)
+    versions_detail = ContentVersionSerializer(source='versions', many=True, read_only=True)
 
     class Meta:
         model = Content
-        fields = [
-            'id', 'workspace', 'brand', 'author', 'folder', 'tags', 'media_assets',
-            'title', 'text_content', 'content_type', 'status', 'created_at', 'updated_at', 'versions'
-        ]
-        read_only_fields = ['workspace', 'author']
+        fields = ['id', 'workspace', 'brand', 'folder', 'title', 'text_content', 'platform', 'is_favorite', 'is_archived', 'tags', 'versions_detail', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+class ContentTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentTag
+        fields = '__all__'
+        read_only_fields = ['user']

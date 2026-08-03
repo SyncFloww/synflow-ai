@@ -1,39 +1,39 @@
-from rest_framework.permissions import BasePermission
+from rest_framework import permissions
+from .models import Workspace, WorkspaceMember
 
-from .models import WorkspaceMember
-
-
-def member_for(user, workspace):
-    if not user.is_authenticated:
+def get_user_workspace_role(user, workspace):
+    if not user or not user.is_authenticated or not workspace:
         return None
-    # Support direct ownership or WorkspaceMember link
-    if workspace.owner_id == user.id:
-        # Create a mock member object for permissions check if they are owner
-        return WorkspaceMember(workspace=workspace, user=user, role=WorkspaceMember.Role.OWNER)
-    return WorkspaceMember.objects.filter(workspace=workspace, user=user).first()
+    try:
+        member = WorkspaceMember.objects.get(
+            workspace=workspace,
+            user=user,
+            status='ACTIVE'
+        )
+        return member.role.upper()
+    except WorkspaceMember.DoesNotExist:
+        return None
 
-
-def can_manage(member):
-    return member and member.role in {WorkspaceMember.Role.OWNER, WorkspaceMember.Role.ADMIN, WorkspaceMember.Role.MANAGER}
-
-
-class IsWorkspaceMember(BasePermission):
-    """
-    Allows access only to authenticated users who are members (or owner) of the workspace.
-    Assumes the URL kwargs contains 'workspace_id'.
-    """
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
+class IsWorkspaceMember(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        workspace = obj if isinstance(obj, Workspace) else getattr(obj, 'workspace', None)
+        if not workspace:
             return False
-            
-        workspace_id = view.kwargs.get('workspace_id')
-        if not workspace_id:
+        role = get_user_workspace_role(request.user, workspace)
+        return role is not None
+
+class IsWorkspaceAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        workspace = obj if isinstance(obj, Workspace) else getattr(obj, 'workspace', None)
+        if not workspace:
             return False
-            
-        from workspaces.models import Workspace
-        try:
-            workspace = Workspace.objects.get(id=workspace_id)
-        except Workspace.DoesNotExist:
+        role = get_user_workspace_role(request.user, workspace)
+        return role in ['OWNER', 'ADMIN']
+
+class IsWorkspaceOwner(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        workspace = obj if isinstance(obj, Workspace) else getattr(obj, 'workspace', None)
+        if not workspace:
             return False
-            
-        return member_for(request.user, workspace) is not None
+        role = get_user_workspace_role(request.user, workspace)
+        return role == 'OWNER'

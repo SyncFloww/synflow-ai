@@ -1,0 +1,8 @@
+{
+  "name": "SyncFloww AI",
+  "description": "AI-Powered Business Operating System (CRM, Finance, HR, AI Executives, and Marketing Automation Platform)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
