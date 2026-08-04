@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('auth', '0001_initial'),
         ('social', '0006_alter_socialaccount_options'),
         ('workspaces', '0002_workspace_created_by_workspace_is_active_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

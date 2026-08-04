@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('auth', '0001_initial'),
         ('ai_agents', '0002_aimodel_generatedcontent_generationhistory_and_more'),
         ('social', '0002_brandasset_brandguideline_brandvoice_oauthtoken_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
