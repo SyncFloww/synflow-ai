@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 amqp==5.3.1
 APScheduler==3.11.3
 asgiref==3.11.1
@@ -131,3 +132,15 @@ urllib3==2.7.0
 vine==5.1.0
 wcwidth==0.8.2
 google-genai>=0.1.0
+=======
+Django>=4.2.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+djangorestframework-simplejwt>=5.2.0
+drf-spectacular>=0.26.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+google-genai>=0.1.0
+google-auth>=2.20.0
+gunicorn>=21.2.0
+>>>>>>> 70ba122f5c58a001d401f5346474a4836d35d9a0
