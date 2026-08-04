@@ -1,0 +1,93 @@
+# API Index
+
+This file is maintained by the Engineering OS inspection pipeline.
+
+## Views
+- ai_agents/views.py
+- analytics/views.py
+- approvals/views.py
+- automation/views.py
+- campaigns/views.py
+- comments/views.py
+- content/views.py
+- content_templates/views.py
+- crm/views.py
+- customer_success/views.py
+- developer/views.py
+- executives/views.py
+- finance/views.py
+- hr/views.py
+- marketplace/views.py
+- media/views.py
+- notifications/views.py
+- projects/views.py
+- prompt_library/views.py
+- publishing/views.py
+- recommendations/views.py
+- reports/views.py
+- scheduler/views.py
+- social/views.py
+- syncfloww/views.py
+- tasks/views.py
+- users/views.py
+- workspaces/views.py
+
+## Viewsets
+- ai_agents/views.py
+- analytics/views.py
+- approvals/views.py
+- automation/views.py
+- campaigns/views.py
+- comments/views.py
+- content/views.py
+- content_templates/views.py
+- crm/views.py
+- customer_success/views.py
+- developer/views.py
+- executives/views.py
+- finance/views.py
+- hr/views.py
+- marketplace/views.py
+- media/views.py
+- notifications/views.py
+- projects/views.py
+- prompt_library/views.py
+- publishing/views.py
+- recommendations/views.py
+- reports/views.py
+- scheduler/views.py
+- social/views.py
+- tasks/views.py
+- workspaces/views.py
+
+## Serializers
+- ai_agents/serializers.py
+- analytics/serializers.py
+- approvals/serializers.py
+- automation/serializers.py
+- campaigns/serializers.py
+- comments/serializers.py
+- content/serializers.py
+- content_templates/serializers.py
+- crm/serializers.py
+- customer_success/serializers.py
+- developer/serializers.py
+- executives/serializers.py
+- finance/serializers.py
+- hr/serializers.py
+- marketplace/serializers.py
+- media/serializers.py
+- notifications/serializers.py
+- projects/serializers.py
+- prompt_library/serializers.py
+- publishing/serializers.py
+- recommendations/serializers.py
+- reports/serializers.py
+- scheduler/serializers.py
+- social/serializers.py
+- tasks/serializers.py
+- users/serializers.py
+- workspaces/serializers.py
+
+## Routes
+- None discovered
