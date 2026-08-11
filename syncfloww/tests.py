@@ -32,3 +32,20 @@ class DashboardAuthenticationTests(TestCase):
             HTTP_X_CSRFTOKEN=csrf_token,
         )
         self.assertNotEqual(write_response.status_code, 403)
+
+    def test_admin_login_accepts_csrf_request_from_trusted_web_origin(self):
+        client = Client(HTTP_HOST='api.syncfloww.com', enforce_csrf_checks=True)
+        login_page = client.get('/admin/login/?next=/')
+        csrf_token = login_page.context['csrf_token']
+
+        response = client.post(
+            '/admin/login/?next=/',
+            data={
+                'username': 'unknown-user',
+                'password': 'invalid-password',
+                'csrfmiddlewaretoken': csrf_token,
+            },
+            HTTP_ORIGIN='https://www.syncfloww.com',
+        )
+
+        self.assertEqual(response.status_code, 200)

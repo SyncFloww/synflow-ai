@@ -19,6 +19,15 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
+# The app is served behind Vercel's HTTPS proxy. Trust the forwarded protocol
+# and the web app origins when validating CSRF-protected form submissions.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [
+    "https://api.syncfloww.com",
+    "https://syncfloww.com",
+    "https://www.syncfloww.com",
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
