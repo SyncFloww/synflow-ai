@@ -39,7 +39,7 @@ class DailyAnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
         user = self.request.user
         return DailyAnalytics.objects.filter(
             Q(brand__workspace__members__user=user, brand__workspace__members__status='ACTIVE') |
-            Q(brand__user=user)
+            Q(brand__created_by=user)
         ).distinct().order_by('-date')
 
 class CollectMetricsView(APIView):
@@ -74,7 +74,7 @@ class UnifiedDashboardView(APIView):
         ).distinct()
 
         daily = DailyAnalytics.objects.filter(
-            Q(brand__workspace__members__user=user, brand__workspace__members__status='ACTIVE') | Q(brand__user=user)
+            Q(brand__workspace__members__user=user, brand__workspace__members__status='ACTIVE') | Q(brand__created_by=user)
         ).distinct()
         
         if brand_id:
