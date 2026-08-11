@@ -82,7 +82,10 @@ ROOT_URLCONF = 'syncfloww.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Include the project-level templates directory used by HomeView.
+        # Without this entry, Django only searches templates bundled in apps,
+        # so the root URL cannot resolve templates/index.html in production.
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -229,4 +232,3 @@ FACEBOOK_APP_SECRET = config("FACEBOOK_APP_SECRET", default="")
 
 # Alias for accounts.services.GoogleAuthService
 GOOGLE_OAUTH2_CLIENT_ID = GOOGLE_CLIENT_ID
-
