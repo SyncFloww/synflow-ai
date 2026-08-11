@@ -1,21 +1,16 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView
-from django.contrib.auth import login
 from django.contrib.auth.models import User
 from projects.models import Project
 from social.models import Brand, SocialAccount
 from ai_agents.models import AIAgent, AgentTask
 
-class HomeView(TemplateView):
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'index.html'
-
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            try:
-                user = User.objects.get(username='partnermarvel55')
-                login(request, user)
-            except User.DoesNotExist:
-                pass
-        return super().get(request, *args, **kwargs)
+    login_url = '/admin/login/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

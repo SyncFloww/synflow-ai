@@ -8,7 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ID = 1
 SECRET_KEY = 'django-insecure-!zt!n+c@76sbw-sc$)*&vb_d_sg3o=e+skk4^)bbk&au*jdll%'
 
-DEBUG = True
+# Debug pages leak settings and stack traces, so they must be enabled explicitly
+# and never by default on a deployed environment.
+DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in ("1", "true", "yes", "on")
 
 ALLOWED_HOSTS = [
     "api.syncfloww.com",
@@ -173,6 +175,7 @@ else:
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (

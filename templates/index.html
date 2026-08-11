@@ -1611,13 +1611,22 @@ Handshake console offline. Click "Test Dispatch" on any webhook above to view pi
         let selectedApprovalId = null;
         let selectedPromptId = null;
 
+        function getCookie(name) {
+            const cookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith(`${name}=`));
+            return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null;
+        }
+
         // AJAX Base fetcher
         async function apiCall(endpoint, method = 'GET', body = null) {
+            const csrfToken = getCookie('csrftoken');
             const options = {
                 method,
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Optional JWT auth can go here
+                    ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
                 }
             };
             if (body) {
