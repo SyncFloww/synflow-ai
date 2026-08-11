@@ -502,7 +502,9 @@ class GoogleAuthView(APIView):
         if not token:
             return Response({'error': 'Google token or code is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        is_testing = getattr(settings, 'TESTING', False)
+        import sys
+        is_testing = getattr(settings, 'TESTING', False) or ('test' in sys.argv)
+
 
         email = None
         first_name = ''

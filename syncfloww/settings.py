@@ -1,3 +1,4 @@
+import sys
 from datetime import timedelta
 import os
 import dj_database_url
@@ -7,6 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SITE_ID = 1
 SECRET_KEY = 'django-insecure-!zt!n+c@76sbw-sc$)*&vb_d_sg3o=e+skk4^)bbk&au*jdll%'
+
+TESTING = 'test' in sys.argv
+
 
 # Debug pages leak settings and stack traces, so they must be enabled explicitly
 # and never by default on a deployed environment.
