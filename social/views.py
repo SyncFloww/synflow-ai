@@ -40,17 +40,41 @@ class BrandViewSet(viewsets.ModelViewSet):
 
 
     def perform_create(self, serializer):
+        from workspaces.models import WorkspaceMember, WorkspaceSetting
+        from django.utils.text import slugify
+
         workspace_id = self.request.data.get('workspace') or self.request.data.get('workspace_id')
-        if not workspace_id:
-            user_ws = Workspace.objects.filter(members__user=self.request.user, members__status='ACTIVE').first()
-            if not user_ws:
-                raise ValidationError({'workspace': 'Active workspace is required to create a brand.'})
-            workspace = user_ws
-        else:
+
+        if workspace_id:
+            # Caller explicitly chose an existing workspace
             workspace = get_object_or_404(Workspace, id=workspace_id)
             role = get_user_workspace_role(self.request.user, workspace)
             if not role:
                 raise PermissionDenied('You are not a member of this workspace.')
+        else:
+            # Auto-create a workspace named after the brand so that brand ≡ workspace
+            brand_name = self.request.data.get('name', 'My Brand')
+            base_slug = slugify(brand_name) or 'brand'
+            slug = base_slug
+            counter = 1
+            while Workspace.objects.filter(slug=slug).exists():
+                slug = f'{base_slug}-{counter}'
+                counter += 1
+
+            with transaction.atomic():
+                workspace = Workspace.objects.create(
+                    owner=self.request.user,
+                    created_by=self.request.user,
+                    name=brand_name,
+                    slug=slug,
+                )
+                WorkspaceMember.objects.create(
+                    workspace=workspace,
+                    user=self.request.user,
+                    role='OWNER',
+                    status='ACTIVE',
+                )
+                WorkspaceSetting.objects.get_or_create(workspace=workspace)
 
         brand = serializer.save(
             workspace=workspace,
@@ -64,8 +88,9 @@ class BrandViewSet(viewsets.ModelViewSet):
                 'target_audience': brand.target_audience or ''
             }
         )
-        BrandVoice.objects.get_or_create(brand=brand, defaults={'tone': 'Professional'})
+        BrandVoice.objects.get_or_create(brand=brand, defaults={'tone': brand.voice or 'Professional'})
         BrandGuideline.objects.get_or_create(brand=brand)
+
 
     def update(self, request, *args, **kwargs):
         brand = self.get_object()
