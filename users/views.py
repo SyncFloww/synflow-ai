@@ -135,6 +135,7 @@ class RegisterView(APIView):
             'user': serializer.data,
             'access': tokens['access'],
             'refresh': tokens['refresh'],
+            'tokens': tokens,
             'message': 'Registration successful. Verification code sent.'
         }, status=status.HTTP_201_CREATED)
 
@@ -197,7 +198,8 @@ class LoginView(APIView):
             return Response({
                 'user': serializer.data,
                 'access': tokens['access'],
-                'refresh': tokens['refresh']
+                'refresh': tokens['refresh'],
+                'tokens': tokens,
             }, status=status.HTTP_200_OK)
         else:
             return Response(
@@ -559,6 +561,7 @@ class GoogleAuthView(APIView):
             'user': serializer.data,
             'access': tokens['access'],
             'refresh': tokens['refresh'],
+            'tokens': tokens,
             'created': created
         }, status=status.HTTP_200_OK)
 
@@ -642,4 +645,3 @@ class PersonalSpaceView(APIView):
             'created_at': ps.created_at,
             'updated_at': ps.updated_at
         }, status=status.HTTP_200_OK)
-

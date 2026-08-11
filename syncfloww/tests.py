@@ -24,6 +24,12 @@ class DashboardAuthenticationTests(TestCase):
         api_response = client.get('/api/v2/campaigns/')
         self.assertEqual(api_response.status_code, 200)
 
+        workflow_response = client.get('/api/v2/workflows/')
+        self.assertEqual(workflow_response.status_code, 200)
+
+        activity_response = client.get('/api/v2/activities/')
+        self.assertEqual(activity_response.status_code, 200)
+
         csrf_token = client.cookies['csrftoken'].value
         write_response = client.post(
             '/api/v2/workflows/',

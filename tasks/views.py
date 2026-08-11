@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions
+from django.db import models
 from .models import Task, ActivityLog
 from .serializers import TaskSerializer, ActivityLogSerializer
 

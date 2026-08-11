@@ -27,6 +27,8 @@ class RegistrationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
+        self.assertEqual(response.data['tokens']['access'], response.data['access'])
+        self.assertEqual(response.data['tokens']['refresh'], response.data['refresh'])
         self.assertEqual(response.data['user']['email'], 'testuser@example.com')
         self.assertEqual(response.data['user']['first_name'], 'Test')
         self.assertNotIn('password', response.data['user'])
@@ -247,6 +249,8 @@ class LoginTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
+        self.assertEqual(response.data['tokens']['access'], response.data['access'])
+        self.assertEqual(response.data['tokens']['refresh'], response.data['refresh'])
 
     def test_valid_login_by_username(self):
         url = reverse('login')
@@ -647,4 +651,3 @@ class ConfigurationAndSettingsTests(APITestCase):
             hosts = [h.strip() for h in hosts_raw.split(',') if h.strip()]
             self.assertEqual(hosts, ['api.syncflow.ai', 'syncflow.ai'])
             self.assertNotIn('*', hosts)
-
