@@ -43,7 +43,8 @@ class BrandSerializer(serializers.ModelSerializer):
             'target_audience', 'niche', 'is_active', 'profile_detail', 'voice_detail',
             'guidelines_detail', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'workspace', 'created_by', 'created_at', 'updated_at']
+
 
 class OAuthTokenSerializer(serializers.ModelSerializer):
     is_expired = serializers.SerializerMethodField()
