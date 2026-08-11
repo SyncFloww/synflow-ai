@@ -486,8 +486,13 @@ class ConnectSocialAccountView(APIView):
             'facebook': 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=150&q=80',
             'linkedin': 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=150&q=80',
             'twitter': 'https://images.unsplash.com/photo-1611605698335-8b15d27e03f2?auto=format&fit=crop&w=150&q=80',
-            'x': 'https://images.unsplash.com/photo-1611605698335-8b15d27e03f2?auto=format&fit=crop&w=150&q=80'
+            'x': 'https://images.unsplash.com/photo-1611605698335-8b15d27e03f2?auto=format&fit=crop&w=150&q=80',
+            'whatsapp': 'https://images.unsplash.com/photo-1614680376593-902f749f705c?auto=format&fit=crop&w=150&q=80',
+            'gmail': 'https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&w=150&q=80',
+            'google': 'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?auto=format&fit=crop&w=150&q=80',
+            'google-drive': 'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?auto=format&fit=crop&w=150&q=80',
         }
+
         
         profile_image = avatar_map.get(platform.lower(), 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80')
         display_name = f"{username.capitalize()} on {platform.capitalize()}"
