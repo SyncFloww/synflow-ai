@@ -466,6 +466,13 @@ class ChangePasswordView(APIView):
 class GoogleAuthView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    def get(self, request):
+        """Return the Google OAuth client ID so the frontend can initialise the Google Identity SDK."""
+        google_client_id = getattr(settings, 'GOOGLE_CLIENT_ID', None) or os.getenv('GOOGLE_CLIENT_ID', '')
+        if not google_client_id:
+            return Response({'client_id': None, 'configured': False}, status=status.HTTP_200_OK)
+        return Response({'client_id': google_client_id, 'configured': True}, status=status.HTTP_200_OK)
+
     def post(self, request):
         token = request.data.get('token') or request.data.get('credential') or request.data.get('id_token')
         if not token:
@@ -645,3 +652,99 @@ class PersonalSpaceView(APIView):
             'created_at': ps.created_at,
             'updated_at': ps.updated_at
         }, status=status.HTTP_200_OK)
+
+
+class FacebookAuthView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        """Return Facebook App ID so the frontend can initialise the Facebook JS SDK."""
+        app_id = getattr(settings, 'FACEBOOK_APP_ID', None) or os.getenv('FACEBOOK_APP_ID', '')
+        if not app_id:
+            return Response({'app_id': None, 'configured': False}, status=status.HTTP_200_OK)
+        return Response({'app_id': app_id, 'configured': True}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Exchange a Facebook user access token for a Syncflow JWT."""
+        access_token = request.data.get('access_token')
+        if not access_token:
+            return Response({'error': 'Facebook access_token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            import urllib.request
+            import json as _json
+            app_id = getattr(settings, 'FACEBOOK_APP_ID', '') or os.getenv('FACEBOOK_APP_ID', '')
+            app_secret = getattr(settings, 'FACEBOOK_APP_SECRET', '') or os.getenv('FACEBOOK_APP_SECRET', '')
+
+            # Verify token with Facebook Graph API
+            url = (
+                f"https://graph.facebook.com/me"
+                f"?fields=id,email,first_name,last_name,picture"
+                f"&access_token={access_token}"
+            )
+            with urllib.request.urlopen(url, timeout=10) as resp:
+                fb_data = _json.loads(resp.read())
+
+            email = fb_data.get('email')
+            first_name = fb_data.get('first_name', '')
+            last_name = fb_data.get('last_name', '')
+            picture = fb_data.get('picture', {}).get('data', {}).get('url', '') if isinstance(fb_data.get('picture'), dict) else ''
+
+        except Exception as e:
+            logger.error(f"Facebook authentication error: {e}", exc_info=True)
+            return Response({'error': 'Invalid Facebook access token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not email:
+            return Response(
+                {'error': 'Could not retrieve email from Facebook. Ensure the email permission is granted.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = User.objects.filter(email__iexact=email).first()
+        created = False
+
+        if not user:
+            username = email
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name
+            )
+            user.set_unusable_password()
+            user.save()
+            created = True
+
+        profile, _ = Profile.objects.get_or_create(
+            user=user,
+            defaults={
+                'full_name': f"{first_name} {last_name}".strip() or user.username,
+                'avatar_url': picture or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                'email_confirmed': True,
+                'provider': 'facebook'
+            }
+        )
+
+        if not profile.email_confirmed:
+            profile.email_confirmed = True
+            profile.save()
+
+        tokens = get_tokens_for_user(user)
+        serializer = UserSerializer(user)
+
+        return Response({
+            'user': serializer.data,
+            'access': tokens['access'],
+            'refresh': tokens['refresh'],
+            'tokens': tokens,
+            'created': created
+        }, status=status.HTTP_200_OK)
+
+
+class AppleAuthView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        """Apple Sign-In configuration endpoint. Returns not-configured until Apple credentials are set up."""
+        return Response({'configured': False, 'message': 'Apple Sign-In is not yet configured on this server.'}, status=status.HTTP_200_OK)
+
