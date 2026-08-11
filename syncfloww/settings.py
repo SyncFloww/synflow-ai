@@ -96,18 +96,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'syncfloww.wsgi.application'
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=(
-            # If running on Vercel, avoid sqlite file path issues.
-            "sqlite:///:memory:"
-            if ('VERCEL' in os.environ or os.environ.get('VERCEL') == '1')
-            else f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-        ),
-        conn_max_age=600,
-    )
-}
+DATABASE_URL = os.getenv("DATABASE_URL")
 
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Default primary key field type
