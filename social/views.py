@@ -26,11 +26,18 @@ class BrandViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Brand.objects.filter(
+        qs = Brand.objects.filter(
             workspace__members__user=self.request.user,
             workspace__members__status='ACTIVE',
             is_active=True
         ).distinct().order_by('-created_at')
+
+        workspace_id = self.request.query_params.get('workspace')
+        if workspace_id:
+            qs = qs.filter(workspace_id=workspace_id)
+
+        return qs
+
 
     def perform_create(self, serializer):
         workspace_id = self.request.data.get('workspace') or self.request.data.get('workspace_id')
