@@ -474,12 +474,35 @@ class GoogleAuthView(APIView):
         return Response({'client_id': google_client_id, 'configured': True}, status=status.HTTP_200_OK)
 
     def post(self, request):
+        code = request.data.get('code')
         token = request.data.get('token') or request.data.get('credential') or request.data.get('id_token')
+
+        google_client_id = getattr(settings, 'GOOGLE_CLIENT_ID', None) or os.getenv('GOOGLE_CLIENT_ID')
+        google_client_secret = getattr(settings, 'GOOGLE_CLIENT_SECRET', None) or os.getenv('GOOGLE_CLIENT_SECRET')
+
+        if code and not token:
+            import requests as py_requests
+            try:
+                redirect_uri = request.data.get('redirect_uri') or 'postmessage'
+                token_res = py_requests.post('https://oauth2.googleapis.com/token', data={
+                    'code': code,
+                    'client_id': google_client_id,
+                    'client_secret': google_client_secret,
+                    'redirect_uri': redirect_uri,
+                    'grant_type': 'authorization_code',
+                })
+                if token_res.status_code == 200:
+                    token_data = token_res.json()
+                    token = token_data.get('id_token')
+                else:
+                    logger.error(f"Google code exchange failed: {token_res.status_code} {token_res.text}")
+            except Exception as ex:
+                logger.error(f"Google code exchange exception: {ex}")
+
         if not token:
-            return Response({'error': 'Google token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Google token or code is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         is_testing = getattr(settings, 'TESTING', False)
-        google_client_id = getattr(settings, 'GOOGLE_CLIENT_ID', None) or os.getenv('GOOGLE_CLIENT_ID')
 
         email = None
         first_name = ''
@@ -493,6 +516,7 @@ class GoogleAuthView(APIView):
             last_name = request.data.get('last_name', 'User')
             picture = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb'
         else:
+
             if token.startswith('test_') or 'mock' in token:
                 return Response(
                     {'error': 'Mock authentication is disabled in production.'},
