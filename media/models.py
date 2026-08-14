@@ -12,6 +12,8 @@ class MediaFolder(models.Model):
 
 class Media(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='media_items')
+    workspace = models.ForeignKey('workspaces.Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='media_items')
+    brand = models.ForeignKey('social.Brand', on_delete=models.SET_NULL, null=True, blank=True, related_name='media_items')
     folder = models.ForeignKey(MediaFolder, on_delete=models.SET_NULL, null=True, blank=True, related_name='media_items')
     file_name = models.CharField(max_length=255)
     file_url = models.CharField(max_length=1000)
@@ -33,3 +35,4 @@ class MediaTag(models.Model):
 
     def __str__(self):
         return self.name
+

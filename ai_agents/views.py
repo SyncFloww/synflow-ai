@@ -11,20 +11,55 @@ from google import genai
 from google.genai import types
 
 from content.models import Content, ContentVersion
-from .models import AIAgent, AgentTask, AIModel, PromptTemplate, GeneratedContent, ContentGeneration, GenerationHistory
+from workspaces.models import Workspace, WorkspaceMember
+from social.models import Brand, BrandVoice, BrandGuideline
+from media.models import Media
+
+from .models import (
+    AIAgent, AgentTask, AIModel, PromptTemplate, GeneratedContent, ContentGeneration, GenerationHistory,
+    AIJob, AIContentProject, AIScript, AIScriptVersion, AISocialContent,
+    CustomVoiceProfile, VoiceConsent, AudioProject, AICaption, AIUsageRecord
+)
 from .serializers import (
     AIAgentSerializer, AgentTaskSerializer, AIModelSerializer, 
     PromptTemplateSerializer, GeneratedContentSerializer, 
-    ContentGenerationSerializer, GenerationHistorySerializer
+    ContentGenerationSerializer, GenerationHistorySerializer,
+    AIJobSerializer, AIContentProjectSerializer, AIScriptSerializer, AIScriptVersionSerializer,
+    AISocialContentSerializer, CustomVoiceProfileSerializer, VoiceConsentSerializer,
+    AudioProjectSerializer, AICaptionSerializer, AIUsageRecordSerializer
 )
-from social.models import Brand, BrandVoice, BrandGuideline
+from .services.job_service import AIJobService
+from .services.studio_services import (
+    AIIdeaService, AIScriptService, AISocialContentService, AIImageService,
+    AIVideoService, AIVoiceService
+)
+from .providers import VoiceProviderRegistry, LLMProviderRegistry
 
 # Lazy-initialization helper for Gemini
 def get_gemini_client():
-    api_key = os.getenv('GEMINI_API_KEY')
+    api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_GENAI_API_KEY')
     if not api_key:
         return None
-    return genai.Client(api_key=api_key)
+    try:
+        return genai.Client(api_key=api_key)
+    except Exception:
+        return None
+
+def get_user_workspace(request):
+    ws_id = request.headers.get('X-Workspace-ID') or request.query_params.get('workspace') or request.data.get('workspace')
+    if ws_id:
+        try:
+            return Workspace.objects.get(id=ws_id, members__user=request.user, members__status='ACTIVE')
+        except Workspace.DoesNotExist:
+            pass
+    # Default to user's first owned or joined workspace
+    member = WorkspaceMember.objects.filter(user=request.user, status='ACTIVE').first()
+    if member:
+        return member.workspace
+    ws, _ = Workspace.objects.get_or_create(owner=request.user, defaults={'name': f"{request.user.username}'s Workspace"})
+    WorkspaceMember.objects.get_or_create(workspace=ws, user=request.user, defaults={'role': 'OWNER', 'status': 'ACTIVE'})
+    return ws
+
 
 class AIAgentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AIAgent.objects.filter(is_active=True)
@@ -82,48 +117,270 @@ class GenerationHistoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return GenerationHistory.objects.filter(user=self.request.user).order_by('-timestamp')
 
-# Provider-agnostic AI Service Abstraction
-class AIService:
-    @staticmethod
-    def generate(provider, model_id, system_instruction, prompt_text):
-        """
-        Dispatches content generation to the chosen provider.
-        Supports 'gemini' (using the official Google GenAI SDK)
-        and fallbacks cleanly to top-tier simulated content.
-        """
-        start_time = time.time()
-        
-        if provider == 'gemini':
-            client = get_gemini_client()
-            if client:
-                try:
-                    response = client.models.generate_content(
-                        model=model_id or 'gemini-3.5-flash',
-                        contents=f"{system_instruction}\n\nUser Input:\n{prompt_text}",
-                    )
-                    generation_time_ms = int((time.time() - start_time) * 1000)
-                    return response.text, generation_time_ms
-                except Exception as e:
-                    print(f"Gemini API error, falling back: {e}")
-        
-        # Fallback / Simulated Provider Adapter
-        generation_time_ms = int((time.time() - start_time) * 1000) + 150
-        simulated_text = AIService._get_simulated_output(prompt_text, system_instruction)
-        return simulated_text, generation_time_ms
+# --- AI MEDIA STUDIO EXTENDED VIEWS ---
 
-    @staticmethod
-    def _get_simulated_output(prompt, instruction):
-        # Extract brand or voice context clues if present
-        topic = "the social media workflow"
-        if "topic:" in prompt.lower():
-            try:
-                topic = prompt.split("topic:")[1].split("\n")[0].strip()
-            except Exception:
-                pass
-        
-        return f"🚀 **SyncflowAI Generated Post**\n\nAre you still spending hours manual-posting? Here is how to automate {topic} using our intelligent multi-agent AI system. \n\nCheck out the main secrets:\n1️⃣ Unified brand voice across all touchpoints\n2️⃣ Automatic schedule coordination\n3️⃣ High-retention hooks generated in 1-click\n\nJoin the workflow revolution with SyncflowAI! ⚡️ #productivity #aiworkflow #automation #contentstudio"
+class AIJobViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = AIJobSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-# Execute standard AIAgent View
+    def get_queryset(self):
+        ws = get_user_workspace(self.request)
+        return AIJob.objects.filter(workspace=ws).order_by('-created_at')
+
+    @action(detail=True, methods=['post'], url_path='retry')
+    def retry(self, request, pk=None):
+        job = self.get_object()
+        job.status = 'QUEUED'
+        job.progress = 0
+        job.error = ''
+        job.retry_count += 1
+        job.save()
+        AIJobService.dispatch_job_async(str(job.id))
+        return Response(AIJobSerializer(job).data)
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        job = self.get_object()
+        if job.status in ['QUEUED', 'PROCESSING']:
+            job.status = 'CANCELLED'
+            job.save()
+        return Response(AIJobSerializer(job).data)
+
+
+class AIContentProjectViewSet(viewsets.ModelViewSet):
+    serializer_class = AIContentProjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        ws = get_user_workspace(self.request)
+        return AIContentProject.objects.filter(workspace=ws).order_by('-updated_at')
+
+    def perform_create(self, serializer):
+        ws = get_user_workspace(self.request)
+        serializer.save(user=self.request.user, workspace=ws)
+
+
+class AIScriptViewSet(viewsets.ModelViewSet):
+    serializer_class = AIScriptSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        ws = get_user_workspace(self.request)
+        return AIScript.objects.filter(workspace=ws).order_by('-updated_at')
+
+    @action(detail=True, methods=['post'], url_path='version')
+    def create_version(self, request, pk=None):
+        script = self.get_object()
+        change = request.data.get('change_summary', 'Version save')
+        ver = AIScriptService.create_version(script, change)
+        return Response(AIScriptVersionSerializer(ver).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='convert-social')
+    def convert_to_social(self, request, pk=None):
+        script = self.get_object()
+        ws = script.workspace
+        brand = script.brand
+        social_items = AISocialContentService.convert_script_to_social(ws, request.user, brand, script)
+        return Response(AISocialContentSerializer(social_items, many=True).data)
+
+
+class AIIdeaGeneratorView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        brand_id = request.data.get('brand')
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        
+        job = AIIdeaService.generate_ideas(ws, request.user, brand, request.data)
+        return Response(AIJobSerializer(job).data, status=status.HTTP_202_ACCEPTED)
+
+
+class AIScriptGeneratorView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        brand_id = request.data.get('brand')
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        
+        script = AIScriptService.generate_script(ws, request.user, brand, request.data)
+        return Response(AIScriptSerializer(script).data, status=status.HTTP_201_CREATED)
+
+
+class AIImageGeneratorView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        brand_id = request.data.get('brand')
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        
+        media_item = AIImageService.generate_image(ws, request.user, brand, request.data)
+        return Response({
+            "id": media_item.id,
+            "file_name": media_item.file_name,
+            "file_url": media_item.file_url,
+            "mime_type": media_item.mime_type,
+            "workspace": media_item.workspace_id,
+            "created_at": media_item.created_at
+        }, status=status.HTTP_201_CREATED)
+
+
+class AIVideoGeneratorView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        brand_id = request.data.get('brand')
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        
+        media_item = AIVideoService.generate_video(ws, request.user, brand, request.data)
+        return Response({
+            "id": media_item.id,
+            "file_name": media_item.file_name,
+            "file_url": media_item.file_url,
+            "mime_type": media_item.mime_type,
+            "workspace": media_item.workspace_id,
+            "created_at": media_item.created_at
+        }, status=status.HTTP_201_CREATED)
+
+
+class AIVoiceStudioView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        prov = VoiceProviderRegistry.get('murf')
+        voices = prov.list_voices()
+        return Response({"voices": voices})
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        brand_id = request.data.get('brand')
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        
+        result = AIVoiceService.generate_voiceover(ws, request.user, brand, request.data)
+        return Response(result, status=status.HTTP_201_CREATED)
+
+
+class CustomVoiceView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        ws = get_user_workspace(request)
+        profiles = CustomVoiceProfile.objects.filter(workspace=ws)
+        return Response(CustomVoiceProfileSerializer(profiles, many=True).data)
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        profile = CustomVoiceProfile.objects.create(
+            workspace=ws,
+            user=request.user,
+            name=request.data.get('name', 'My Voice Profile'),
+            description=request.data.get('description', ''),
+            provider_voice_id=request.data.get('provider_voice_id', f"custom_{request.user.id}"),
+            sample_url=request.data.get('sample_url', '')
+        )
+        return Response(CustomVoiceProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
+
+
+class VoiceConsentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        profile_id = request.data.get('voice_profile')
+        profile = CustomVoiceProfile.objects.filter(id=profile_id, workspace=ws).first() if profile_id else None
+        
+        consent = VoiceConsent.objects.create(
+            voice_profile=profile,
+            user=request.user,
+            workspace=ws,
+            consent_statement=request.data.get('statement', 'I hereby grant explicit consent to train and use my voice profile for AI voice synthesis in Syncfloww.'),
+            signature_name=request.data.get('signature_name', request.user.get_full_name() or request.user.username),
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        return Response(VoiceConsentSerializer(consent).data, status=status.HTTP_201_CREATED)
+
+
+class AIAudioMixerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        job = AIJobService.create_job(
+            workspace=ws,
+            user=request.user,
+            job_type='audio_mix',
+            input_data=request.data
+        )
+        job = AIJobService.execute_job_sync(str(job.id))
+        return Response(AIJobSerializer(job).data)
+
+
+class AICaptionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ws = get_user_workspace(request)
+        audio_url = request.data.get('audio_url', '')
+        text = request.data.get('text', 'Syncfloww AI Media Studio creates viral social content.')
+        
+        words = text.split()
+        timings = []
+        t = 0.0
+        for w in words:
+            timings.append({"word": w, "start_time": round(t, 2), "end_time": round(t + 0.4, 2)})
+            t += 0.4
+
+        caption = AICaption.objects.create(
+            workspace=ws,
+            user=request.user,
+            audio_url=audio_url,
+            transcript=text,
+            srt_content=f"1\n00:00:00,000 --> 00:00:05,000\n{text}",
+            vtt_content=f"WEBVTT\n\n1\n00:00:00.000 --> 00:00:05.000\n{text}",
+            word_timings=timings,
+            style_config=request.data.get('style_config', {"font": "Inter", "color": "#FFFFFF", "position": "bottom"})
+        )
+        return Response(AICaptionSerializer(caption).data, status=status.HTTP_201_CREATED)
+
+
+class AIMagicEditorView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        action_name = request.data.get('action', 'rewrite') # rewrite, expand, shorten, change_tone, viral_hook, make_professional
+        text = request.data.get('text', '')
+        tone = request.data.get('tone', 'engaging')
+        
+        llm = LLMProviderRegistry.get('gemini')
+        prompt = f"Perform '{action_name}' action on the following text (desired tone: {tone}):\n\n'{text}'"
+        res = llm.generate_text(prompt=prompt)
+        
+        return Response({
+            "action": action_name,
+            "original_text": text,
+            "result_text": res.text,
+            "estimated_cost": res.estimated_cost
+        })
+
+
+class AIUsageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        ws = get_user_workspace(request)
+        records = AIUsageRecord.objects.filter(workspace=ws)
+        total_cost = sum([r.estimated_cost for r in records])
+        total_jobs = AIJob.objects.filter(workspace=ws).count()
+        return Response({
+            "total_estimated_cost": float(total_cost),
+            "total_jobs_count": total_jobs,
+            "usage_history": AIUsageRecordSerializer(records[:50], many=True).data
+        })
+
+# Legacy ExecuteAgent & GenerateContent backward compatibility
 class ExecuteAgentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -133,10 +390,7 @@ class ExecuteAgentView(APIView):
         except AIAgent.DoesNotExist:
             return Response({'error': f'Agent {agent_type} not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        input_data = request.data.get('input_data', {})
-        if not input_data:
-            input_data = request.data # support direct body attributes too
-
+        input_data = request.data.get('input_data', request.data)
         task = AgentTask.objects.create(
             user=request.user,
             agent=agent,
@@ -145,205 +399,31 @@ class ExecuteAgentView(APIView):
             status='processing'
         )
 
-        client = get_gemini_client()
-        if not client:
-            task.status = 'completed'
-            task.completed_at = datetime.now()
-            task.output_data = self._get_fallback_data(agent_type, input_data)
-            task.save()
-            return Response(AgentTaskSerializer(task).data, status=status.HTTP_200_OK)
-
-        try:
-            prompt = self._build_prompt(agent_type, input_data)
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.7,
-                ),
-            )
-            result_text = response.text
-            try:
-                task.output_data = json.loads(result_text)
-            except Exception:
-                task.output_data = {"raw_output": result_text}
-
-            task.status = 'completed'
-            task.completed_at = datetime.now()
-        except Exception as e:
-            task.status = 'failed'
-            task.output_data = {'error': str(e)}
+        llm = LLMProviderRegistry.get('gemini')
+        prompt = f"Execute agent '{agent.name}' task for input: {json.dumps(input_data)}"
+        res = llm.generate_text(prompt=prompt)
         
+        task.status = 'completed'
+        task.completed_at = datetime.now()
+        task.output_data = res.structured_data if res.structured_data else {"result": res.text}
         task.save()
-        return Response(AgentTaskSerializer(task).data, status=status.HTTP_200_OK)
+        return Response(AgentTaskSerializer(task).data)
 
-    def _build_prompt(self, agent_type, input_data):
-        niche = input_data.get('niche', 'technology')
-        topic = input_data.get('topic', 'Why automation matters')
-        tone = input_data.get('tone', 'exciting')
-        style = input_data.get('style', 'high-tempo cinematic')
-        title = input_data.get('title', 'AI Video Workflow')
-        description = input_data.get('description', 'Automating shorts production.')
 
-        if agent_type == 'idea-generator':
-            return f"Generate 3 YouTube/TikTok video topic ideas for niche '{niche}'. Return JSON schema: {{'niche': '{niche}', 'ideas': [{{'title': '..', 'hook': '..', 'description': '..', 'viral_score': 90}}]}}"
-        elif agent_type == 'scriptwriter':
-            return f"Write a 60s video script for '{topic}' with a '{tone}' tone. Return JSON schema: {{'topic': '{topic}', 'tone': '{tone}', 'script': [{{'timestamp': '0:00 - 0:10', 'visual_cues': '..', 'dialogue': '..', 'sound_effects': '..'}}]}}"
-        elif agent_type == 'video-editor':
-            return f"Create video post-production editing instructions for style '{style}'. Script: {topic}. Return JSON schema: {{'style': '{style}', 'instructions': [{{'scene_number': 1, 'cut_timestamp': '0:00', 'transition_type': '..', 'overlay_text': '..', 'b_roll_description': '..', 'background_audio': '..'}}]}}"
-        else:
-            return f"Draft social media post captions optimized for YT, TikTok, and IG for video title '{title}' with description '{description}'. Return JSON schema: {{'youtube': {{'title': '..', 'description': '..', 'tags': []}}, 'tiktok': {{'caption': '..', 'trending_sounds_suggestions': []}}, 'instagram': {{'caption': '..', 'niche_targeting_keywords': []}}}}"
-
-    def _get_fallback_data(self, agent_type, input_data):
-        niche = input_data.get('niche', 'technology')
-        topic = input_data.get('topic', 'Why space exploration matters')
-        title = input_data.get('title', 'AI Video Workflow')
-        description = input_data.get('description', 'Automating shorts production.')
-        
-        if agent_type == 'idea-generator':
-            return {
-                "niche": niche,
-                "ideas": [
-                    {"title": f"The Dark Truth of {niche} in 2026", "hook": "99% of people have no idea this technology is tracking them...", "description": "Deep dive into data compliance trends.", "viral_score": 94},
-                    {"title": f"3 Mind-Blowing {niche} Secrets", "hook": "If you are still doing this manually, you are wasting hours of your life.", "description": "Quick, punchy automation tutorials.", "viral_score": 88}
-                ]
-            }
-        elif agent_type == 'scriptwriter':
-            return {
-                "topic": topic, "tone": "exciting", "estimated_duration_seconds": 60,
-                "script": [
-                    {"timestamp": "0:00 - 0:10", "visual_cues": "Space telemetry overlays.", "dialogue": "Space isn't just empty darkness.", "sound_effects": "Low synth ambient hum."}
-                ]
-            }
-        elif agent_type == 'video-editor':
-            return {
-                "style": "high-tempo cinematic",
-                "instructions": [
-                    {"scene_number": 1, "cut_timestamp": "0:00", "transition_type": "Hard zoom in", "overlay_text": "THE ULTIMATE FRONTIER", "b_roll_description": "Starfield zooming in.", "background_audio": "Ambient orchestra builds."}
-                ]
-            }
-        else:
-            return {
-                "youtube": {"title": f"{title} 🤖🔥", "description": description, "tags": ["workflow", "ai", "productivity"]},
-                "tiktok": {"caption": f"Why work harder when AI can generate video ideas? #productivity", "trending_sounds_suggestions": ["Sci-Fi Suspense Beat"]},
-                "instagram": {"caption": f"From a blank page to a viral script. #contentcreator", "niche_targeting_keywords": ["Content Creation"]}
-            }
-
-# Provider-agnostic Content Generation Endpoint with Brand Voice details
 class GenerateContentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        topic = request.data.get('topic')
+        topic = request.data.get('topic', 'Content strategy')
         platform = request.data.get('platform', 'instagram')
-        audience = request.data.get('audience', 'general public')
-        tone = request.data.get('tone', 'professional')
-        goal = request.data.get('goal', 'inform')
-        keywords = request.data.get('keywords', [])
-        brand_id = request.data.get('brand_id')
-        model_id = request.data.get('model_id', 'gemini-3.5-flash')
-        provider = request.data.get('provider', 'gemini')
+        llm = LLMProviderRegistry.get('gemini')
+        prompt = f"Create a viral {platform} post about {topic}"
+        res = llm.generate_text(prompt=prompt)
 
-        if not topic:
-            return Response({'error': 'topic is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Build brand-specific guidelines context if brand_id is specified
-        brand_guidelines_str = ""
-        brand_instance = None
-        if brand_id:
-            try:
-                brand_instance = Brand.objects.get(id=brand_id, workspace__members__user=request.user, workspace__members__status='ACTIVE')
-                # Inject voice & colors
-                voice_detail = getattr(brand_instance, 'brand_voice', None)
-                guidelines_detail = getattr(brand_instance, 'guideline', None)
-                
-                brand_guidelines_str += f"\n--- BRAND VOICE & GUIDELINES ---"
-                brand_guidelines_str += f"\nBrand Name: {brand_instance.name}"
-                brand_guidelines_str += f"\nBrand Description: {brand_instance.description}"
-                if voice_detail:
-                    brand_guidelines_str += f"\nBrand Tone: {voice_detail.tone}"
-                    brand_guidelines_str += f"\nKeywords: {voice_detail.keywords}"
-                    brand_guidelines_str += f"\nExamples of style: {voice_detail.examples}"
-                if guidelines_detail:
-                    brand_guidelines_str += f"\nIndustry: {guidelines_detail.industry}"
-                    brand_guidelines_str += f"\nColors: {guidelines_detail.colors}"
-                    brand_guidelines_str += f"\nFonts: {guidelines_detail.fonts}"
-            except Brand.DoesNotExist:
-                pass
-
-        # Prepare System instructions
-        system_instruction = (
-            f"You are SyncflowAI, an advanced social media operating system assistant.\n"
-            f"Generate a piece of high-converting social media content optimized for: {platform}.\n"
-            f"Target Audience: {audience}\n"
-            f"Desired Tone: {tone}\n"
-            f"Goal: {goal}\n"
-            f"Keywords to include: {', '.join(keywords) if isinstance(keywords, list) else keywords}\n"
-            f"{brand_guidelines_str}\n"
-            f"Produce only the final optimized content copy with engaging formatting, hooks, spacing, and relevant hashtags."
-        )
-
-        prompt_text = f"Generate content about topic: {topic}"
-
-        # Select or create AIModel database config record
-        ai_model_obj, _ = AIModel.objects.get_or_create(
-            model_id=model_id,
-            defaults={'name': model_id, 'provider': provider, 'cost_per_1k_tokens': 0.00015}
-        )
-
-        # Call the Provider-agnostic service layer
-        output_text, generation_time_ms = AIService.generate(
-            provider=provider,
-            model_id=model_id,
-            system_instruction=system_instruction,
-            prompt_text=prompt_text
-        )
-
-        # Save GeneratedContent to Library
-        generated_content = GeneratedContent.objects.create(
+        gen_content = GeneratedContent.objects.create(
             user=request.user,
-            brand=brand_instance,
-            prompt_used=system_instruction,
-            content_text=output_text,
-            platform=platform,
-            model_used=ai_model_obj,
-            generation_time_ms=generation_time_ms
-        )
-
-        # Save to Canonical Content Library
-        canonical_content = Content.objects.create(
-            user=request.user,
-            brand=brand_instance,
-            workspace=brand_instance.workspace if brand_instance else None,
-            title=f"{platform.capitalize()} - {topic[:30]}",
-            text_content=output_text,
+            prompt_used=prompt,
+            content_text=res.text,
             platform=platform
         )
-        ContentVersion.objects.create(
-            content=canonical_content,
-            text_content=output_text,
-            version_number=1
-        )
-
-        # Log to Generation History
-        GenerationHistory.objects.create(
-            user=request.user,
-            generated_content=generated_content,
-            action='created'
-        )
-
-        # Log content generation record
-        ContentGeneration.objects.create(
-            user=request.user,
-            inputs=request.data,
-            output=generated_content
-        )
-
-        serializer = GeneratedContentSerializer(generated_content)
-        return Response({
-            'generated_content': serializer.data,
-            'ai_model': AIModelSerializer(ai_model_obj).data,
-            'generation_time_ms': generation_time_ms,
-            'prompt_used': system_instruction
-        }, status=status.HTTP_201_CREATED)
+        return Response(GeneratedContentSerializer(gen_content).data, status=status.HTTP_201_CREATED)
