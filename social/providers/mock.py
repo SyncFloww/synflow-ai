@@ -17,13 +17,27 @@ class MockSocialProvider(BaseSocialProvider):
     def __init__(self, provider_name: str = "mock"):
         self.provider_name = provider_name.lower()
 
-    def get_authorization_url(self, redirect_uri: str, state: str, extra_params: Optional[Dict[str, Any]] = None) -> str:
+    def get_capabilities(self) -> list:
+        return [
+            "PROFILE_READ",
+            "CONTENT_READ",
+            "CONTENT_PUBLISH",
+            "COMMENTS_READ",
+            "COMMENTS_WRITE",
+            "ANALYTICS_READ",
+            "MEDIA_UPLOAD"
+        ]
+
+    def get_scopes(self) -> list:
+        return ["read_profile", "publish_content", "read_analytics"]
+
+    def get_authorization_url(self, redirect_uri: str, state: str, code_challenge: Optional[str] = None, extra_params: Optional[Dict[str, Any]] = None) -> str:
         mock_code = f"mock_code_{self.provider_name}_{uuid.uuid4().hex[:8]}"
-        base_url = redirect_uri or "https://app.syncflowai.com/oauth/callback"
+        base_url = redirect_uri or "https://app.syncfloww.com/oauth/callback"
         query_delimiter = "&" if "?" in base_url else "?"
         return f"{base_url}{query_delimiter}code={mock_code}&state={state}&provider={self.provider_name}"
 
-    def exchange_code(self, code: str, redirect_uri: str) -> Dict[str, Any]:
+    def exchange_code(self, code: str, redirect_uri: str, code_verifier: Optional[str] = None) -> Dict[str, Any]:
         if not code or not isinstance(code, str):
             raise ValidationError("Invalid authorization code.")
 
@@ -57,6 +71,8 @@ class MockSocialProvider(BaseSocialProvider):
             'username': username,
             'display_name': display_name,
             'profile_image_url': profile_image,
+            'granted_scopes': self.get_scopes(),
+            'capabilities': self.get_capabilities(),
             'raw_response': {'provider': self.provider_name, 'mock': True, 'code_used': code}
         }
 

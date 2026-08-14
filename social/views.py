@@ -1,3 +1,4 @@
+import os
 from rest_framework import viewsets, permissions, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.decorators import action
@@ -337,6 +338,10 @@ class OAuthTokenViewSet(viewsets.ModelViewSet):
             )
         ).distinct()
 
+from .security import OAuthStateManager
+from .models import OAuthAuditLog
+from .capabilities import get_capability_metadata
+
 class OAuthProvidersView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -346,59 +351,103 @@ class OAuthProvidersView(APIView):
 class OAuthAuthorizeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        provider_name = request.query_params.get('provider')
-        account_type = request.query_params.get('account_type', 'personal').lower()
+    def get(self, request, provider=None):
+        provider_name = provider or request.query_params.get('provider')
+        account_type = request.query_params.get('account_type', 'brand').lower()
         brand_id = request.query_params.get('brand_id')
-        redirect_uri = request.query_params.get('redirect_uri', 'https://app.syncflowai.com/oauth/callback')
+        redirect_uri = request.query_params.get('redirect_uri') or os.getenv('OAUTH_REDIRECT_BASE_URL', 'https://app.syncfloww.com/oauth/callback')
 
         if not provider_name:
             return Response({'error': 'provider parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if account_type == 'brand':
-            if not brand_id:
-                return Response({'error': 'brand_id is required for brand social accounts.'}, status=status.HTTP_400_BAD_REQUEST)
-            brand = get_object_or_404(Brand, id=brand_id)
+        brand = None
+        workspace_id = None
+        if account_type == 'brand' or brand_id:
+            if not brand_id or not str(brand_id).isdigit():
+                return Response({'error': 'Valid brand_id is required for connecting brand social accounts.'}, status=status.HTTP_400_BAD_REQUEST)
+            brand = get_object_or_404(Brand, id=int(brand_id))
             role = get_user_workspace_role(request.user, brand.workspace)
             if role not in ['OWNER', 'ADMIN', 'MANAGER']:
                 return Response({'error': 'You do not have permission to connect social accounts to this brand.'}, status=status.HTTP_403_FORBIDDEN)
+            workspace_id = brand.workspace.id
 
         try:
-            provider = get_provider(provider_name)
+            prov = get_provider(provider_name)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        state = f"state_{uuid.uuid4().hex}"
-        auth_url = provider.get_authorization_url(redirect_uri, state)
+        # Generate cryptographic signed state bound to user, workspace, brand, and PKCE
+        pkce_verifier = str(uuid.uuid4().hex)
+        signed_state, code_verifier = OAuthStateManager.generate_state(
+            user_id=request.user.id,
+            workspace_id=workspace_id or 0,
+            brand_id=brand.id if brand else 0,
+            provider=provider_name,
+            code_verifier=pkce_verifier
+        )
+
+        auth_url = prov.get_authorization_url(redirect_uri, signed_state, code_challenge=code_verifier)
+
+        # Audit Log
+        OAuthAuditLog.objects.create(
+            workspace=brand.workspace if brand else None,
+            brand=brand,
+            user=request.user,
+            platform=provider_name.lower(),
+            action='OAUTH_INITIATED',
+            status='SUCCESS',
+            details={'redirect_uri': redirect_uri},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+
+        capabilities = prov.get_capabilities() if hasattr(prov, 'get_capabilities') else []
+        scopes = prov.get_scopes() if hasattr(prov, 'get_scopes') else []
 
         return Response({
             'authorization_url': auth_url,
-            'provider': provider_name,
-            'state': state,
-            'account_type': account_type,
-            'brand_id': brand_id
+            'provider': provider_name.lower(),
+            'state': signed_state,
+            'account_type': 'brand' if brand else 'personal',
+            'brand_id': brand.id if brand else None,
+            'brand_name': brand.name if brand else None,
+            'capabilities': get_capability_metadata(capabilities),
+            'scopes': scopes
         }, status=status.HTTP_200_OK)
 
 class OAuthCallbackView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        provider_name = request.data.get('provider')
+    def post(self, request, provider=None):
+        provider_name = provider or request.data.get('provider')
         code = request.data.get('code')
-        account_type = str(request.data.get('account_type', 'personal')).lower()
-        brand_id = request.data.get('brand_id')
-        redirect_uri = request.data.get('redirect_uri', 'https://app.syncflowai.com/oauth/callback')
+        state_str = request.data.get('state')
+        redirect_uri = request.data.get('redirect_uri') or os.getenv('OAUTH_REDIRECT_BASE_URL', 'https://app.syncfloww.com/oauth/callback')
 
         if not provider_name or not code:
             return Response({'error': 'provider and code are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Cryptographic State Security Validation
+        try:
+            state_data = OAuthStateManager.validate_and_consume_state(state_str, provider_name)
+        except ValueError as e:
+            OAuthAuditLog.objects.create(
+                user=request.user,
+                platform=provider_name.lower(),
+                action='OAUTH_FAILED',
+                status='FAILED',
+                details={'error': str(e)},
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Enforce user isolation
+        if state_data['user_id'] != request.user.id:
+            return Response({'error': 'State user mismatch. Re-authentication required.'}, status=status.HTTP_403_FORBIDDEN)
+
         brand = None
         personal_space = None
-
-        if account_type == 'brand':
-            if not brand_id:
-                return Response({'error': 'brand_id is required for brand social accounts.'}, status=status.HTTP_400_BAD_REQUEST)
-            brand = get_object_or_404(Brand, id=brand_id)
+        if state_data['brand_id']:
+            brand = get_object_or_404(Brand, id=state_data['brand_id'])
             role = get_user_workspace_role(request.user, brand.workspace)
             if role not in ['OWNER', 'ADMIN', 'MANAGER']:
                 return Response({'error': 'Permission denied for this brand workspace.'}, status=status.HTTP_403_FORBIDDEN)
@@ -406,23 +455,36 @@ class OAuthCallbackView(APIView):
             personal_space, _ = PersonalSpace.objects.get_or_create(user=request.user)
 
         try:
-            provider = get_provider(provider_name)
-            token_data = provider.exchange_code(code, redirect_uri)
+            prov = get_provider(provider_name)
+            code_verifier = state_data.get('code_verifier')
+            token_data = prov.exchange_code(code, redirect_uri, code_verifier=code_verifier)
         except (ValueError, ValidationError) as e:
             err_msg = e.detail if hasattr(e, 'detail') else str(e)
-            return Response({'error': err_msg}, status=status.HTTP_400_BAD_REQUEST)
+            OAuthAuditLog.objects.create(
+                workspace=brand.workspace if brand else None,
+                brand=brand,
+                user=request.user,
+                platform=provider_name.lower(),
+                action='OAUTH_FAILED',
+                status='FAILED',
+                details={'error': str(err_msg)},
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            return Response({'error': str(err_msg)}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            if account_type == 'brand':
+            account_id = token_data.get('account_id', '') or token_data.get('username', '')
+            if brand:
                 account, created = SocialAccount.objects.get_or_create(
                     brand=brand,
                     platform=provider_name.lower(),
-                    username=token_data['username'],
+                    account_id=account_id,
                     defaults={
+                        'username': token_data['username'],
                         'display_name': token_data.get('display_name', ''),
                         'profile_image_url': token_data.get('profile_image_url', ''),
-                        'account_id': token_data.get('account_id', ''),
                         'connected_by': request.user,
+                        'status': 'ACTIVE',
                         'is_active': True
                     }
                 )
@@ -430,29 +492,45 @@ class OAuthCallbackView(APIView):
                 account, created = SocialAccount.objects.get_or_create(
                     personal_space=personal_space,
                     platform=provider_name.lower(),
-                    username=token_data['username'],
+                    account_id=account_id,
                     defaults={
+                        'username': token_data['username'],
                         'display_name': token_data.get('display_name', ''),
                         'profile_image_url': token_data.get('profile_image_url', ''),
-                        'account_id': token_data.get('account_id', ''),
                         'connected_by': request.user,
                         'user': request.user,
+                        'status': 'ACTIVE',
                         'is_active': True
                     }
                 )
 
-            if not created:
-                account.display_name = token_data.get('display_name', account.display_name)
-                account.profile_image_url = token_data.get('profile_image_url', account.profile_image_url)
-                account.is_active = True
-                account.connected_by = request.user
-                account.save()
+            account.username = token_data.get('username', account.username)
+            account.display_name = token_data.get('display_name', account.display_name)
+            account.profile_image_url = token_data.get('profile_image_url', account.profile_image_url)
+            account.status = 'ACTIVE'
+            account.is_active = True
+            account.connected_by = request.user
+            account.save()
 
+            # Store encrypted tokens
             OAuthTokenService.store_tokens(
                 social_account=account,
                 access_token=token_data['access_token'],
                 refresh_token=token_data.get('refresh_token', ''),
-                expires_at=token_data.get('expires_at')
+                expires_at=token_data.get('expires_at'),
+                granted_scopes=token_data.get('granted_scopes', []),
+                capabilities=token_data.get('capabilities', [])
+            )
+
+            OAuthAuditLog.objects.create(
+                workspace=brand.workspace if brand else None,
+                brand=brand,
+                user=request.user,
+                platform=provider_name.lower(),
+                action='OAUTH_SUCCESS',
+                status='SUCCESS',
+                details={'account_id': account.account_id, 'username': account.username},
+                ip_address=request.META.get('REMOTE_ADDR')
             )
 
         serializer = SocialAccountSerializer(account)
@@ -462,62 +540,26 @@ class ConnectSocialAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, platform):
-        username = request.data.get('username', 'marvel_creator')
-        brand_id = request.data.get('brand_id')
-        
-        brand = None
-        personal_space = None
-        if brand_id:
-            try:
-                brand = Brand.objects.get(
-                    id=brand_id,
-                    workspace__members__user=request.user,
-                    workspace__members__status='ACTIVE'
-                )
-            except Brand.DoesNotExist:
-                return Response({'error': 'Brand not found or permission denied'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            personal_space, _ = PersonalSpace.objects.get_or_create(user=request.user)
+        # Deprecated: Redirect client to OAuth authorize endpoint
+        return Response({
+            'message': f"To connect {platform}, please call GET /api/social/oauth/{platform}/authorize/ to initiate standard OAuth consent."
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-        avatar_map = {
-            'youtube': 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=150&q=80',
-            'tiktok': 'https://images.unsplash.com/photo-1598128558393-70ff21433be0?auto=format&fit=crop&w=150&q=80',
-            'instagram': 'https://images.unsplash.com/photo-1611224885990-ab7363d1f2a9?auto=format&fit=crop&w=150&q=80',
-            'facebook': 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=150&q=80',
-            'linkedin': 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=150&q=80',
-            'twitter': 'https://images.unsplash.com/photo-1611605698335-8b15d27e03f2?auto=format&fit=crop&w=150&q=80',
-            'x': 'https://images.unsplash.com/photo-1611605698335-8b15d27e03f2?auto=format&fit=crop&w=150&q=80',
-            'whatsapp': 'https://images.unsplash.com/photo-1614680376593-902f749f705c?auto=format&fit=crop&w=150&q=80',
-            'gmail': 'https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&w=150&q=80',
-            'google': 'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?auto=format&fit=crop&w=150&q=80',
-            'google-drive': 'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?auto=format&fit=crop&w=150&q=80',
-        }
+class VerifySocialAccountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-        
-        profile_image = avatar_map.get(platform.lower(), 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80')
-        display_name = f"{username.capitalize()} on {platform.capitalize()}"
+    def post(self, request, pk):
+        try:
+            account = SocialAccount.objects.get(id=pk)
+            if account.brand and get_user_workspace_role(request.user, account.brand.workspace) not in ['OWNER', 'ADMIN', 'MANAGER']:
+                return Response({'error': 'Access denied to this brand account.'}, status=status.HTTP_403_FORBIDDEN)
+            elif account.personal_space and account.personal_space.user != request.user:
+                return Response({'error': 'Access denied.'}, status=status.HTTP_403_FORBIDDEN)
 
-        account = SocialAccount.objects.create(
-            user=request.user,
-            personal_space=personal_space,
-            brand=brand,
-            connected_by=request.user,
-            platform=platform,
-            username=username,
-            display_name=display_name,
-            profile_image_url=profile_image,
-            is_active=True
-        )
-
-        OAuthTokenService.store_tokens(
-            social_account=account,
-            access_token=f"access_tok_{uuid.uuid4()}",
-            refresh_token=f"refresh_tok_{uuid.uuid4()}",
-            expires_at=timezone.now() + timedelta(days=30)
-        )
-
-        serializer = SocialAccountSerializer(account)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            res = OAuthTokenService.verify_connection(account, user=request.user, ip_address=request.META.get('REMOTE_ADDR'))
+            return Response(res, status=status.HTTP_200_OK)
+        except SocialAccount.DoesNotExist:
+            return Response({'error': 'Social account not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 class DisconnectSocialAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -525,12 +567,12 @@ class DisconnectSocialAccountView(APIView):
     def post(self, request, pk):
         try:
             account = SocialAccount.objects.get(id=pk)
-            if account.personal_space and account.personal_space.user != request.user:
+            if account.brand and get_user_workspace_role(request.user, account.brand.workspace) not in ['OWNER', 'ADMIN', 'MANAGER']:
                 return Response({'error': 'Social account not found'}, status=status.HTTP_404_NOT_FOUND)
-            elif account.brand and get_user_workspace_role(request.user, account.brand.workspace) not in ['OWNER', 'ADMIN', 'MANAGER']:
+            elif account.personal_space and account.personal_space.user != request.user:
                 return Response({'error': 'Social account not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            account.delete()
+            OAuthTokenService.disconnect_account(account, user=request.user, ip_address=request.META.get('REMOTE_ADDR'))
             return Response({'message': 'Social account disconnected successfully'}, status=status.HTTP_200_OK)
         except SocialAccount.DoesNotExist:
             return Response({'error': 'Social account not found'}, status=status.HTTP_404_NOT_FOUND)

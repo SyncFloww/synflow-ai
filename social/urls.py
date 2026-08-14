@@ -5,7 +5,7 @@ from .views import (
     BrandAssetViewSet, BrandVoiceViewSet, BrandGuidelineViewSet,
     SocialAccountViewSet, PlatformCredentialViewSet,
     OAuthProvidersView, OAuthAuthorizeView, OAuthCallbackView,
-    ConnectSocialAccountView, DisconnectSocialAccountView
+    ConnectSocialAccountView, VerifySocialAccountView, DisconnectSocialAccountView
 )
 
 router = DefaultRouter()
@@ -21,8 +21,12 @@ router.register('credentials', PlatformCredentialViewSet, basename='platformcred
 urlpatterns = [
     path('oauth/providers/', OAuthProvidersView.as_view(), name='oauth_providers'),
     path('oauth/authorize/', OAuthAuthorizeView.as_view(), name='oauth_authorize'),
+    path('oauth/<str:provider>/authorize/', OAuthAuthorizeView.as_view(), name='oauth_provider_authorize'),
     path('oauth/callback/', OAuthCallbackView.as_view(), name='oauth_callback'),
+    path('oauth/<str:provider>/callback/', OAuthCallbackView.as_view(), name='oauth_provider_callback'),
+    path('accounts/<int:pk>/verify/', VerifySocialAccountView.as_view(), name='verify_social_account'),
+    path('accounts/<int:pk>/disconnect/', DisconnectSocialAccountView.as_view(), name='disconnect_social_account'),
     path('connect/<str:platform>/', ConnectSocialAccountView.as_view(), name='connect_social'),
-    path('<int:pk>/disconnect/', DisconnectSocialAccountView.as_view(), name='disconnect_social'),
+    path('<int:pk>/disconnect/', DisconnectSocialAccountView.as_view(), name='disconnect_social_deprecated'),
     path('', include(router.urls)),
 ]

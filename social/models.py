@@ -2,7 +2,9 @@ from typing import Optional
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.utils import timezone
 from workspaces.models import Workspace
+from .security import TokenEncryptionService
 
 class Brand(models.Model):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='brands')
@@ -81,12 +83,11 @@ class BrandKnowledge(models.Model):
     def __str__(self):
         return f"{self.title} ({self.knowledge_type}) for {self.brand.name}"
 
-
 class BrandAsset(models.Model):
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='assets')
     name = models.CharField(max_length=255)
     file_url = models.CharField(max_length=1000)
-    asset_type = models.CharField(max_length=50, default='image') # e.g. logo, font, color-palette
+    asset_type = models.CharField(max_length=50, default='image')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -94,7 +95,7 @@ class BrandAsset(models.Model):
 
 class BrandVoice(models.Model):
     brand = models.OneToOneField(Brand, on_delete=models.CASCADE, related_name='brand_voice')
-    tone = models.CharField(max_length=255) # e.g. humorous, corporate, professional
+    tone = models.CharField(max_length=255)
     goal = models.CharField(max_length=255, blank=True, default='')
     keywords = models.JSONField(default=list, blank=True)
     examples = models.TextField(blank=True, default='')
@@ -118,17 +119,36 @@ class BrandGuideline(models.Model):
         return f"Guidelines for {self.brand.name}"
 
 class SocialAccount(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Consent'),
+        ('ACTIVE', 'Active'),
+        ('EXPIRED', 'Token Expired'),
+        ('REAUTH_REQUIRED', 'Re-authentication Required'),
+        ('REVOKED', 'Access Revoked'),
+        ('ERROR', 'Connection Error'),
+        ('DISCONNECTED', 'Disconnected'),
+    )
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_accounts', null=True, blank=True)
     personal_space = models.ForeignKey('users.PersonalSpace', on_delete=models.CASCADE, null=True, blank=True, related_name='social_accounts')
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True, blank=True, related_name='social_accounts')
     connected_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='connected_social_accounts')
-    platform = models.CharField(max_length=50)  # e.g., 'instagram', 'facebook', 'linkedin', 'tiktok', 'x', 'twitter', 'youtube'
+    
+    platform = models.CharField(max_length=50) # instagram, facebook, linkedin, tiktok, x, twitter, youtube
     username = models.CharField(max_length=255)
     display_name = models.CharField(max_length=255, blank=True, default='')
     profile_image_url = models.CharField(max_length=1000, blank=True, default='')
-    account_id = models.CharField(max_length=255, blank=True, default='')
+    account_id = models.CharField(max_length=255, blank=True, default='') # Provider unique user/page ID
+    
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='ACTIVE')
+    granted_scopes = models.JSONField(default=list, blank=True)
+    capabilities = models.JSONField(default=list, blank=True)
+    last_verified_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default='')
+    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -137,27 +157,20 @@ class SocialAccount(models.Model):
         from django.core.exceptions import ValidationError
         if bool(self.personal_space_id) and bool(self.brand_id):
             raise ValidationError("A social account must belong to EITHER a Personal Space OR a Brand, not both.")
-        if not self.personal_space_id and not self.brand_id and not self.user_id and not self.connected_by_id:
-            raise ValidationError("A social account must be attached to either a Personal Space or a Brand.")
 
     def save(self, *args, **kwargs):
         from django.core.exceptions import ValidationError
 
-        # Enforce tenancy isolation: cannot belong to both
         if self.personal_space_id and self.brand_id:
             raise ValidationError("A social account cannot belong to both a Personal Space and a Brand.")
 
-        # Auto-resolve ownership if neither is explicitly set but user is provided
         if not self.personal_space_id and not self.brand_id:
             owner_user = self.connected_by or self.user
             if owner_user:
                 from users.models import PersonalSpace
                 ps, _ = PersonalSpace.objects.get_or_create(user=owner_user)
                 self.personal_space = ps
-            else:
-                raise ValidationError("A social account must be attached to either a Personal Space or a Brand.")
 
-        # Ensure ownership separation
         if self.brand_id:
             self.personal_space = None
         elif self.personal_space_id:
@@ -188,7 +201,7 @@ class SocialAccount(models.Model):
 
     def __str__(self):
         owner_str = f"Brand: {self.brand.name}" if self.brand else f"PersonalSpace: {self.personal_space_id}"
-        return f"{self.platform} - {self.username} ({owner_str})"
+        return f"{self.platform} - {self.username} ({self.status}) ({owner_str})"
 
 class PlatformCredential(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='platform_credentials')
@@ -202,17 +215,60 @@ class PlatformCredential(models.Model):
 
 class OAuthToken(models.Model):
     social_account = models.OneToOneField(SocialAccount, on_delete=models.CASCADE, related_name='oauth_token')
-    access_token = models.TextField()
-    refresh_token = models.TextField(blank=True, default='')
+    encrypted_access_token = models.TextField(default='')
+    encrypted_refresh_token = models.TextField(blank=True, default='')
     expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def access_token(self) -> str:
+        return TokenEncryptionService.decrypt(self.encrypted_access_token)
+
+    @access_token.setter
+    def access_token(self, value: str):
+        self.encrypted_access_token = TokenEncryptionService.encrypt(value)
+
+    @property
+    def refresh_token(self) -> str:
+        return TokenEncryptionService.decrypt(self.encrypted_refresh_token)
+
+    @refresh_token.setter
+    def refresh_token(self, value: str):
+        self.encrypted_refresh_token = TokenEncryptionService.encrypt(value)
 
     @property
     def is_expired(self) -> bool:
         if self.expires_at:
-            from django.utils import timezone
             return self.expires_at <= timezone.now()
         return False
 
     def __str__(self):
-        return f"OAuth Token for {self.social_account}"
+        return f"Encrypted OAuth Token for {self.social_account}"
+
+class OAuthAuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('OAUTH_INITIATED', 'OAuth Session Initiated'),
+        ('OAUTH_SUCCESS', 'OAuth Connection Successful'),
+        ('OAUTH_FAILED', 'OAuth Authorization Failed'),
+        ('TOKEN_REFRESHED', 'Token Refreshed'),
+        ('VERIFIED', 'Connection Verified'),
+        ('DISCONNECTED', 'Account Disconnected'),
+        ('REVOKED', 'Token Revoked'),
+    )
+
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='oauth_audit_logs')
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True, blank=True, related_name='oauth_audit_logs')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='oauth_audit_logs')
+    platform = models.CharField(max_length=50)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    status = models.CharField(max_length=20, default='SUCCESS') # SUCCESS, FAILED
+    details = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.action} ({self.platform}) by {self.user.username} at {self.created_at}"

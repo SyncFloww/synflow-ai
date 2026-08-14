@@ -6,6 +6,7 @@ from .facebook import FacebookOAuthProvider
 from .linkedin import LinkedInOAuthProvider
 from .tiktok import TikTokOAuthProvider
 from .x import XOAuthProvider
+from .youtube import YouTubeOAuthProvider
 
 __all__ = [
     'get_provider',
@@ -17,5 +18,6 @@ __all__ = [
     'FacebookOAuthProvider',
     'LinkedInOAuthProvider',
     'TikTokOAuthProvider',
-    'XOAuthProvider'
+    'XOAuthProvider',
+    'YouTubeOAuthProvider',
 ]

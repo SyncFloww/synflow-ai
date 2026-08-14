@@ -69,10 +69,15 @@ class ProviderRegistry:
             seen.add(name)
             provider = cls._providers.get(name) or MockSocialProvider(provider_name=name)
             is_mock = isinstance(provider, MockSocialProvider)
+            capabilities = provider.get_capabilities() if hasattr(provider, 'get_capabilities') else []
+            scopes = provider.get_scopes() if hasattr(provider, 'get_scopes') else []
+            
             result.append({
                 'name': name,
                 'display_name': display_names.get(name, name.capitalize()),
                 'mode': 'mock' if is_mock else 'production',
+                'capabilities': capabilities,
+                'scopes': scopes,
                 'is_supported': True
             })
         return result

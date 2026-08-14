@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Brand, BrandProfile, BrandKnowledge, BrandAsset, BrandVoice, BrandGuideline, SocialAccount, PlatformCredential, OAuthToken
+from .models import Brand, BrandProfile, BrandKnowledge, BrandAsset, BrandVoice, BrandGuideline, SocialAccount, PlatformCredential, OAuthToken, OAuthAuditLog
 
 class BrandProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -72,9 +72,10 @@ class SocialAccountSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'personal_space', 'brand', 'brand_name', 'owner_type', 'owner_id', 'owner_name',
             'connected_by', 'connected_by_username', 'platform', 'username', 'display_name',
-            'profile_image_url', 'account_id', 'is_active', 'oauth_token_detail', 'created_at'
+            'profile_image_url', 'account_id', 'status', 'granted_scopes', 'capabilities',
+            'last_verified_at', 'last_error', 'is_active', 'oauth_token_detail', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'connected_by', 'created_at']
+        read_only_fields = ['id', 'connected_by', 'created_at', 'updated_at']
 
 class PlatformCredentialSerializer(serializers.ModelSerializer):
     has_credentials = serializers.SerializerMethodField()
@@ -85,3 +86,15 @@ class PlatformCredentialSerializer(serializers.ModelSerializer):
 
     def get_has_credentials(self, obj):
         return bool(obj.credential_data)
+
+class OAuthAuditLogSerializer(serializers.ModelSerializer):
+    user_username = serializers.ReadOnlyField(source='user.username')
+    brand_name = serializers.ReadOnlyField(source='brand.name')
+
+    class Meta:
+        model = OAuthAuditLog
+        fields = [
+            'id', 'workspace', 'brand', 'brand_name', 'user', 'user_username',
+            'platform', 'action', 'status', 'details', 'ip_address', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
