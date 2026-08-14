@@ -18,6 +18,9 @@ from .registries import (
     AudioProviderRegistry,
 )
 from .llm import GoogleGeminiProvider, OpenAIProvider, DeepSeekProvider
+from .huggingface import HuggingFaceLLMProvider
+from .litellm import LiteLLMProvider
+from .ollama import OllamaProvider
 from .image import FalAIImageProvider, ReplicateImageProvider, GeminiImageProvider
 from .video import RunwayVideoProvider, ReplicateVideoProvider
 from .voice import MurfVoiceProvider
@@ -27,6 +30,9 @@ from .audio_media import FFmpegAudioProcessor
 LLMProviderRegistry.register("gemini", GoogleGeminiProvider(), is_default=True)
 LLMProviderRegistry.register("openai", OpenAIProvider())
 LLMProviderRegistry.register("deepseek", DeepSeekProvider())
+LLMProviderRegistry.register("huggingface", HuggingFaceLLMProvider())
+LLMProviderRegistry.register("litellm", LiteLLMProvider())
+LLMProviderRegistry.register("ollama", OllamaProvider())
 
 ImageProviderRegistry.register("fal", FalAIImageProvider(), is_default=True)
 ImageProviderRegistry.register("replicate", ReplicateImageProvider())

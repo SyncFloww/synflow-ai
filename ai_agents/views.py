@@ -33,6 +33,7 @@ from .services.studio_services import (
     AIIdeaService, AIScriptService, AISocialContentService, AIImageService,
     AIVideoService, AIVoiceService
 )
+from .services.ai_service import AIService
 from .providers import VoiceProviderRegistry, LLMProviderRegistry
 
 # Lazy-initialization helper for Gemini
@@ -353,16 +354,26 @@ class AIMagicEditorView(APIView):
         action_name = request.data.get('action', 'rewrite') # rewrite, expand, shorten, change_tone, viral_hook, make_professional
         text = request.data.get('text', '')
         tone = request.data.get('tone', 'engaging')
+        provider = request.data.get('provider')
+        model = request.data.get('model')
+        ws = get_user_workspace(request)
         
-        llm = LLMProviderRegistry.get('gemini')
-        prompt = f"Perform '{action_name}' action on the following text (desired tone: {tone}):\n\n'{text}'"
-        res = llm.generate_text(prompt=prompt)
+        ai_service = AIService()
+        res, usage = ai_service.generate_content(
+            prompt=f"Perform '{action_name}' action on the following text (desired tone: {tone}):\n\n'{text}'",
+            user=request.user,
+            workspace=ws,
+            task_type="content",
+            provider=provider,
+            model=model
+        )
         
         return Response({
             "action": action_name,
             "original_text": text,
             "result_text": res.text,
-            "estimated_cost": res.estimated_cost
+            "estimated_cost": float(res.estimated_cost),
+            "usage_id": usage.id if usage else None
         })
 
 
@@ -391,6 +402,8 @@ class ExecuteAgentView(APIView):
             return Response({'error': f'Agent {agent_type} not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         input_data = request.data.get('input_data', request.data)
+        ws = get_user_workspace(request)
+
         task = AgentTask.objects.create(
             user=request.user,
             agent=agent,
@@ -399,9 +412,13 @@ class ExecuteAgentView(APIView):
             status='processing'
         )
 
-        llm = LLMProviderRegistry.get('gemini')
-        prompt = f"Execute agent '{agent.name}' task for input: {json.dumps(input_data)}"
-        res = llm.generate_text(prompt=prompt)
+        ai_service = AIService()
+        res, _ = ai_service.generate_content(
+            prompt=f"Execute agent '{agent.name}' task for input: {json.dumps(input_data)}",
+            user=request.user,
+            workspace=ws,
+            task_type=agent.task_type or "agent_reasoning"
+        )
         
         task.status = 'completed'
         task.completed_at = datetime.now()
@@ -416,13 +433,29 @@ class GenerateContentView(APIView):
     def post(self, request):
         topic = request.data.get('topic', 'Content strategy')
         platform = request.data.get('platform', 'instagram')
-        llm = LLMProviderRegistry.get('gemini')
-        prompt = f"Create a viral {platform} post about {topic}"
-        res = llm.generate_text(prompt=prompt)
+        provider = request.data.get('provider')
+        model = request.data.get('model')
+        
+        ws = get_user_workspace(request)
+        brand_id = request.data.get('brand')
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+
+        ai_service = AIService()
+        res, usage = ai_service.generate_content(
+            prompt=f"Create a viral {platform} post about {topic}",
+            user=request.user,
+            workspace=ws,
+            brand=brand,
+            task_type="caption",
+            platform=platform,
+            provider=provider,
+            model=model
+        )
 
         gen_content = GeneratedContent.objects.create(
             user=request.user,
-            prompt_used=prompt,
+            brand=brand,
+            prompt_used=f"Create a viral {platform} post about {topic}",
             content_text=res.text,
             platform=platform
         )

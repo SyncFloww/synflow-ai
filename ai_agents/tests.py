@@ -95,3 +95,67 @@ class AIMediaStudioTestCase(TestCase):
         )
         self.assertEqual(consent.voice_profile, profile)
         self.assertEqual(consent.signature_name, "Creator User")
+
+    def test_ai_architecture_phase1(self):
+        # 1. Test Provider Registry for new providers
+        hf_prov = LLMProviderRegistry.get('huggingface')
+        self.assertIsNotNone(hf_prov)
+        self.assertEqual(hf_prov.provider_name, "huggingface")
+
+        litellm_prov = LLMProviderRegistry.get('litellm')
+        self.assertIsNotNone(litellm_prov)
+        self.assertEqual(litellm_prov.provider_name, "litellm")
+
+        ollama_prov = LLMProviderRegistry.get('ollama')
+        self.assertIsNotNone(ollama_prov)
+        self.assertEqual(ollama_prov.provider_name, "ollama")
+
+        # 2. Test AIService execution and automatic AIUsageRecord creation
+        from ai_agents.services import AIService, PromptManager, ModelRouter, OutputParser
+        from ai_agents.models import AIUsageRecord
+
+        ai_service = AIService()
+        
+        # Test Hugging Face provider via AIService
+        result, usage = ai_service.generate_content(
+            prompt="Write a short motivational line for tech founders.",
+            user=self.user,
+            workspace=self.workspace,
+            brand=self.brand,
+            task_type="caption",
+            platform="linkedin",
+            provider="huggingface"
+        )
+
+        self.assertTrue(len(result.text) > 0)
+        self.assertIsNotNone(usage)
+        self.assertEqual(usage.workspace, self.workspace)
+        self.assertEqual(usage.provider, "huggingface")
+        self.assertEqual(AIUsageRecord.objects.filter(workspace=self.workspace).count(), 1)
+
+        # Test LiteLLM provider via AIService
+        res_lite, usage_lite = ai_service.generate_content(
+            prompt="Analyze comment intent.",
+            user=self.user,
+            workspace=self.workspace,
+            task_type="sentiment",
+            provider="litellm"
+        )
+        self.assertTrue(len(res_lite.text) > 0)
+        self.assertIsNotNone(usage_lite)
+        self.assertEqual(usage_lite.provider, "litellm")
+
+        # Test PromptManager
+        pm = PromptManager()
+        sys_prompt = pm.build_system_prompt(task_type="script", platform="tiktok", brand=self.brand)
+        self.assertIn("TIKTOK", sys_prompt.upper())
+        self.assertIn("TechBrand", sys_prompt)
+
+        # Test ModelRouter
+        mr = ModelRouter()
+        prov, model = mr.resolve_target(task_type="sentiment")
+        self.assertEqual(prov, "gemini")
+
+        prov_hf, model_hf = mr.resolve_target(provider="huggingface")
+        self.assertEqual(prov_hf, "huggingface")
+        self.assertIn("Llama", model_hf)
