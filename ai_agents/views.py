@@ -47,19 +47,48 @@ def get_gemini_client():
         return None
 
 def get_user_workspace(request):
-    ws_id = request.headers.get('X-Workspace-ID') or request.query_params.get('workspace') or request.data.get('workspace')
-    if ws_id:
+    if not request or not hasattr(request, 'user') or not request.user or not request.user.is_authenticated:
+        return None
+
+    ws_id = None
+    if hasattr(request, 'headers') and hasattr(request.headers, 'get'):
+        ws_id = request.headers.get('X-Workspace-ID')
+    if not ws_id and hasattr(request, 'query_params') and hasattr(request.query_params, 'get'):
+        ws_id = request.query_params.get('workspace')
+    if not ws_id and getattr(request, 'method', 'GET') in ('POST', 'PUT', 'PATCH') and hasattr(request, 'data'):
         try:
-            return Workspace.objects.get(id=ws_id, members__user=request.user, members__status='ACTIVE')
-        except Workspace.DoesNotExist:
+            if isinstance(request.data, dict):
+                ws_id = request.data.get('workspace')
+        except Exception:
             pass
-    # Default to user's first owned or joined workspace
-    member = WorkspaceMember.objects.filter(user=request.user, status='ACTIVE').first()
+
+    if ws_id and str(ws_id).strip() not in ('', 'undefined', 'null', 'None'):
+        ws_str = str(ws_id).strip()
+        try:
+            if ws_str.isdigit():
+                ws = Workspace.objects.filter(id=int(ws_str), members__user=request.user, members__status__iexact='ACTIVE').first()
+            else:
+                ws = Workspace.objects.filter(slug=ws_str, members__user=request.user, members__status__iexact='ACTIVE').first()
+            if ws:
+                return ws
+        except Exception:
+            pass
+
+    # Default to user's first active workspace
+    member = WorkspaceMember.objects.filter(user=request.user, status__iexact='ACTIVE').first()
     if member:
         return member.workspace
-    ws, _ = Workspace.objects.get_or_create(owner=request.user, defaults={'name': f"{request.user.username}'s Workspace"})
-    WorkspaceMember.objects.get_or_create(workspace=ws, user=request.user, defaults={'role': 'OWNER', 'status': 'ACTIVE'})
-    return ws
+
+    ws = Workspace.objects.filter(owner=request.user).first()
+    if ws:
+        return ws
+
+    try:
+        ws, _ = Workspace.objects.get_or_create(owner=request.user, defaults={'name': f"{request.user.username}'s Workspace"})
+        WorkspaceMember.objects.get_or_create(workspace=ws, user=request.user, defaults={'role': 'OWNER', 'status': 'ACTIVE'})
+        return ws
+    except Exception:
+        return Workspace.objects.filter(owner=request.user).first()
 
 
 class AIAgentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -126,6 +155,8 @@ class AIJobViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         ws = get_user_workspace(self.request)
+        if not ws:
+            return AIJob.objects.none()
         return AIJob.objects.filter(workspace=ws).order_by('-created_at')
 
     @action(detail=True, methods=['post'], url_path='retry')
@@ -154,10 +185,14 @@ class AIContentProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         ws = get_user_workspace(self.request)
+        if not ws:
+            return AIContentProject.objects.none()
         return AIContentProject.objects.filter(workspace=ws).order_by('-updated_at')
 
     def perform_create(self, serializer):
         ws = get_user_workspace(self.request)
+        if not ws:
+            raise ValidationError("Active workspace is required to create an AI project.")
         serializer.save(user=self.request.user, workspace=ws)
 
 
@@ -167,6 +202,8 @@ class AIScriptViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         ws = get_user_workspace(self.request)
+        if not ws:
+            return AIScript.objects.none()
         return AIScript.objects.filter(workspace=ws).order_by('-updated_at')
 
     @action(detail=True, methods=['post'], url_path='version')
@@ -190,8 +227,10 @@ class AIIdeaGeneratorView(APIView):
 
     def post(self, request):
         ws = get_user_workspace(request)
+        if not ws:
+            return Response({'error': 'Active workspace required.'}, status=status.HTTP_400_BAD_REQUEST)
         brand_id = request.data.get('brand')
-        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id and str(brand_id).isdigit() else None
         
         job = AIIdeaService.generate_ideas(ws, request.user, brand, request.data)
         return Response(AIJobSerializer(job).data, status=status.HTTP_202_ACCEPTED)
@@ -202,8 +241,10 @@ class AIScriptGeneratorView(APIView):
 
     def post(self, request):
         ws = get_user_workspace(request)
+        if not ws:
+            return Response({'error': 'Active workspace required.'}, status=status.HTTP_400_BAD_REQUEST)
         brand_id = request.data.get('brand')
-        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id and str(brand_id).isdigit() else None
         
         script = AIScriptService.generate_script(ws, request.user, brand, request.data)
         return Response(AIScriptSerializer(script).data, status=status.HTTP_201_CREATED)
@@ -214,8 +255,10 @@ class AIImageGeneratorView(APIView):
 
     def post(self, request):
         ws = get_user_workspace(request)
+        if not ws:
+            return Response({'error': 'Active workspace required.'}, status=status.HTTP_400_BAD_REQUEST)
         brand_id = request.data.get('brand')
-        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id else None
+        brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id and str(brand_id).isdigit() else None
         
         media_item = AIImageService.generate_image(ws, request.user, brand, request.data)
         return Response({
