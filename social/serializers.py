@@ -5,7 +5,7 @@ class BrandProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrandProfile
         fields = '__all__'
-        read_only_fields = ['id', 'brand', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'brand', 'created_at', 'updated_at', 'onboarding_answers', 'onboarding_completed']
 
 class BrandKnowledgeSerializer(serializers.ModelSerializer):
     class Meta:

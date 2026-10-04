@@ -26,6 +26,20 @@ class BrandViewSet(viewsets.ModelViewSet):
     serializer_class = BrandSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=True, methods=['get', 'patch'], url_path='onboarding')
+    def onboarding(self, request, pk=None):
+        from .onboarding import InterviewUpdateSerializer, interview_state, save_interview
+        brand = self.get_object()
+        if request.method == 'GET':
+            profile, _ = BrandProfile.objects.get_or_create(brand=brand)
+            return Response(interview_state(brand, profile))
+        if get_user_workspace_role(request.user, brand.workspace) not in ['OWNER', 'ADMIN', 'MANAGER']:
+            raise PermissionDenied('Only brand managers can update the interview.')
+        serializer = InterviewUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            return Response(save_interview(brand, serializer.validated_data))
+
     def get_queryset(self):
         qs = Brand.objects.filter(
             workspace__members__user=self.request.user,

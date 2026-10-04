@@ -7,6 +7,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 from google import genai
 from google.genai import types
 
@@ -245,6 +246,8 @@ class AIScriptGeneratorView(APIView):
             return Response({'error': 'Active workspace required.'}, status=status.HTTP_400_BAD_REQUEST)
         brand_id = request.data.get('brand')
         brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id and str(brand_id).isdigit() else None
+        if brand_id is not None and brand is None:
+            raise ValidationError({'brand': 'Choose a brand in the active workspace.'})
         
         script = AIScriptService.generate_script(ws, request.user, brand, request.data)
         return Response(AIScriptSerializer(script).data, status=status.HTTP_201_CREATED)

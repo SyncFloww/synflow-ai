@@ -3,6 +3,8 @@ import threading
 from typing import Dict, Any, Optional
 from django.utils import timezone
 from ai_agents.models import AIJob, AIUsageRecord
+from ai_agents.services.prompt_manager import PromptManager
+from ai_agents.services.output_parser import OutputParser
 from ai_agents.providers.registries import (
     LLMProviderRegistry,
     ImageProviderRegistry,
@@ -98,18 +100,27 @@ class AIJobService:
                     f"Provide separate fields: hook, body, transitions, cta, visual_directions, b_roll_suggestions, voiceover_text, onscreen_text. "
                     f"Tone: {job.input_data.get('tone', 'energetic')}. Output as clean JSON."
                 )
-                res = llm.generate_text(prompt=prompt, json_schema={"hook": ""})
+                res = llm.generate_text(
+                    prompt=prompt,
+                    system_prompt=PromptManager().build_system_prompt(
+                        task_type='script', platform=platform, brand=job.brand,
+                    ),
+                    json_schema={"hook": ""},
+                )
                 job.progress = 80
-                output = res.structured_data if res.structured_data else {
-                    "hook": f"Stop scrolling if you want to master {topic}!",
-                    "body": f"Here is the secret to {topic}. First, focus on the core value proposition. Second, engage with your community daily.",
-                    "transitions": "Fast push-in zoom cut",
-                    "cta": "Link in bio for full strategy!",
-                    "visual_directions": "Creator speaking dynamically with text popups.",
-                    "b_roll_suggestions": ["Laptop screen with dashboard", "Creator smiling"],
-                    "voiceover_text": f"Stop scrolling if you want to master {topic}! Here is the secret...",
-                    "onscreen_text": f"MASTER {topic.upper()} NOW"
-                }
+                output = res.structured_data or OutputParser().parse_json(res.text)
+                if not isinstance(output, dict) or any(
+                    not isinstance(output.get(field), str) or not output[field].strip()
+                    for field in ('hook', 'body', 'cta')
+                ):
+                    raise ValueError('AI response must include a non-empty hook, body, and cta.')
+                for field in ('transitions', 'visual_directions', 'voiceover_text', 'onscreen_text'):
+                    if field in output and not isinstance(output[field], str):
+                        raise ValueError(f'AI script field {field} must be text.')
+                if not isinstance(output.get('b_roll_suggestions', []), list) or any(
+                    not isinstance(item, str) for item in output.get('b_roll_suggestions', [])
+                ):
+                    raise ValueError('AI b-roll suggestions must be a list of text values.')
                 cost = res.estimated_cost
 
             elif job.job_type == 'social_content':
@@ -277,4 +288,3 @@ class AIJobService:
 
         t = threading.Thread(target=_run, daemon=True)
         t.start()
-
