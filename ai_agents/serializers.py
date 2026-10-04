@@ -74,7 +74,7 @@ class AIScriptSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIScript
         fields = '__all__'
-        read_only_fields = ['user', 'workspace', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'workspace', 'brand', 'project', 'created_at', 'updated_at']
 
 class AISocialContentSerializer(serializers.ModelSerializer):
     class Meta:

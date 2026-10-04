@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Dict, Any, List, Optional
 from django.utils import timezone
 from rest_framework.exceptions import APIException
@@ -93,7 +94,7 @@ class AIIdeaService:
             brand=brand,
             job_type='idea',
             input_data=params,
-            provider=params.get('provider', 'gemini')
+            provider=os.getenv('AI_PROVIDER', 'gemini')
         )
         AIJobService.dispatch_job_async(str(job.id))
         return job
@@ -108,7 +109,7 @@ class AIScriptService:
             brand=brand,
             job_type='script',
             input_data=params,
-            provider=params.get('provider', 'gemini')
+            provider=os.getenv('AI_PROVIDER', 'gemini')
         )
         job = AIJobService.execute_job_sync(str(job.id))
         if job is None or job.status != 'COMPLETED':

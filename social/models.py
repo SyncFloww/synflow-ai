@@ -274,3 +274,26 @@ class OAuthAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} ({self.platform}) by {self.user.username} at {self.created_at}"
+
+class BrandMessage(models.Model):
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=[('user', 'User'), ('assistant', 'Assistant')])
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+class BrandLead(models.Model):
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='leads')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    source = models.CharField(max_length=255)
+    note = models.TextField(blank=True)
+    consent_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']

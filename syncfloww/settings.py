@@ -239,7 +239,8 @@ AUTHENTICATION_BACKENDS = [
 try:
     from decouple import config
 except ImportError:
-    config = os.getenv
+    def config(key, default=None):
+        return os.getenv(key, default)
 
 GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
 GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")

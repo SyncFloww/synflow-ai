@@ -22,7 +22,9 @@ from .serializers import (
 from .providers import get_provider, list_providers
 from .services import OAuthTokenService
 
-class BrandViewSet(viewsets.ModelViewSet):
+from .assistant_actions import BrandAssistantActions
+
+class BrandViewSet(BrandAssistantActions, viewsets.ModelViewSet):
     serializer_class = BrandSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -64,8 +66,8 @@ class BrandViewSet(viewsets.ModelViewSet):
             # Caller explicitly chose an existing workspace
             workspace = get_object_or_404(Workspace, id=workspace_id)
             role = get_user_workspace_role(self.request.user, workspace)
-            if not role:
-                raise PermissionDenied('You are not a member of this workspace.')
+            if role not in ['OWNER', 'ADMIN', 'MANAGER']:
+                raise PermissionDenied('Only brand managers can create brands.')
         else:
             # Auto-create a workspace named after the brand so that brand ≡ workspace
             brand_name = self.request.data.get('name', 'My Brand')
@@ -175,6 +177,7 @@ class BrandViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             return Response(BrandVoiceSerializer(voice).data)
         
+        self.require_brand_manager(brand)
         serializer = BrandVoiceSerializer(voice, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -187,6 +190,7 @@ class BrandViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             return Response(BrandGuidelineSerializer(guideline).data)
         
+        self.require_brand_manager(brand)
         serializer = BrandGuidelineSerializer(guideline, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -199,12 +203,31 @@ class BrandViewSet(viewsets.ModelViewSet):
             assets = BrandAsset.objects.filter(brand=brand)
             return Response(BrandAssetSerializer(assets, many=True).data)
         
+        self.require_brand_manager(brand)
         serializer = BrandAssetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(brand=brand)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class BrandProfileViewSet(viewsets.ModelViewSet):
+class BrandResourcePermissions:
+    def check_brand(self, brand):
+        if get_user_workspace_role(self.request.user, brand.workspace) not in ('OWNER', 'ADMIN', 'MANAGER'):
+            raise PermissionDenied('Only brand managers can change brand resources.')
+
+    def perform_create(self, serializer):
+        brand = get_object_or_404(Brand, pk=self.request.data.get('brand'), is_active=True)
+        self.check_brand(brand)
+        serializer.save(brand=brand)
+
+    def perform_update(self, serializer):
+        self.check_brand(serializer.instance.brand)
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        self.check_brand(instance.brand)
+        instance.delete()
+
+class BrandProfileViewSet(BrandResourcePermissions, viewsets.ModelViewSet):
     serializer_class = BrandProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -214,7 +237,7 @@ class BrandProfileViewSet(viewsets.ModelViewSet):
             brand__workspace__members__status='ACTIVE'
         ).distinct()
 
-class BrandKnowledgeViewSet(viewsets.ModelViewSet):
+class BrandKnowledgeViewSet(BrandResourcePermissions, viewsets.ModelViewSet):
     serializer_class = BrandKnowledgeSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -229,11 +252,10 @@ class BrandKnowledgeViewSet(viewsets.ModelViewSet):
         brand_id = self.request.data.get('brand')
         brand = get_object_or_404(Brand, id=brand_id)
         role = get_user_workspace_role(self.request.user, brand.workspace)
-        if not role:
-            raise PermissionDenied('You are not a member of this workspace.')
+        self.check_brand(brand)
         serializer.save(brand=brand)
 
-class BrandAssetViewSet(viewsets.ModelViewSet):
+class BrandAssetViewSet(BrandResourcePermissions, viewsets.ModelViewSet):
     serializer_class = BrandAssetSerializer
     permission_classes = [permissions.IsAuthenticated]
     
@@ -243,7 +265,7 @@ class BrandAssetViewSet(viewsets.ModelViewSet):
             brand__workspace__members__status='ACTIVE'
         ).distinct()
 
-class BrandVoiceViewSet(viewsets.ModelViewSet):
+class BrandVoiceViewSet(BrandResourcePermissions, viewsets.ModelViewSet):
     serializer_class = BrandVoiceSerializer
     permission_classes = [permissions.IsAuthenticated]
     
@@ -253,7 +275,7 @@ class BrandVoiceViewSet(viewsets.ModelViewSet):
             brand__workspace__members__status='ACTIVE'
         ).distinct()
 
-class BrandGuidelineViewSet(viewsets.ModelViewSet):
+class BrandGuidelineViewSet(BrandResourcePermissions, viewsets.ModelViewSet):
     serializer_class = BrandGuidelineSerializer
     permission_classes = [permissions.IsAuthenticated]
     

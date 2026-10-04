@@ -23,32 +23,32 @@ class ScriptIntegrityTests(TestCase):
         BrandKnowledge.objects.create(brand=self.brand, title='Delivery', content='Delivery on Saturdays')
         self.params = {'topic': 'Bread', 'platform': 'instagram'}
 
-    @patch('ai_agents.services.job_service.LLMProviderRegistry.get')
+    @patch('ai_agents.services.job_service.generate_text')
     def test_valid_json_is_saved_with_brand_context(self, get_provider):
-        get_provider.return_value.generate_text.return_value = GenerationResult(
+        get_provider.return_value = GenerationResult(
             text=json.dumps({'hook': 'Fresh bread?', 'body': 'Try our sourdough.', 'cta': 'Order today.'})
         )
         script = AIScriptService.generate_script(self.workspace, self.user, self.brand, self.params)
         self.assertEqual(script.body, 'Try our sourdough.')
         self.assertEqual(script.versions.count(), 1)
-        context = get_provider.return_value.generate_text.call_args.kwargs['system_prompt']
+        context = get_provider.call_args.kwargs['system_prompt']
         for value in ('Bakery', 'Sourdough', 'Local sales', 'Delivery on Saturdays', 'Guaranteed weight loss'):
             self.assertIn(value, context)
 
-    @patch('ai_agents.services.job_service.LLMProviderRegistry.get')
+    @patch('ai_agents.services.job_service.generate_text')
     def test_unusable_responses_never_create_scripts(self, get_provider):
         for output in ({}, {'content': 'mock'}, {'hook': 'Hello', 'body': '', 'cta': 'Buy'},
                        {'hook': 'Hello', 'body': 'Bread', 'cta': 'Buy', 'b_roll_suggestions': 'wrong type'}):
             with self.subTest(output=output):
-                get_provider.return_value.generate_text.return_value = GenerationResult(structured_data=output)
+                get_provider.return_value = GenerationResult(structured_data=output)
                 with self.assertRaises(ScriptGenerationUnavailable):
                     AIScriptService.generate_script(self.workspace, self.user, self.brand, self.params)
         self.assertEqual(AIScript.objects.count(), 0)
         self.assertEqual(AIJob.objects.filter(status='FAILED').count(), 4)
 
-    @patch('ai_agents.services.job_service.LLMProviderRegistry.get')
+    @patch('ai_agents.services.job_service.generate_text')
     def test_provider_failure_returns_retryable_api_error(self, get_provider):
-        get_provider.return_value.generate_text.side_effect = RuntimeError('sensitive provider details')
+        get_provider.side_effect = RuntimeError('sensitive provider details')
         client = APIClient()
         client.force_authenticate(self.user)
         response = client.post('/api/ai/scripts/generate/', {**self.params, 'brand': self.brand.id}, format='json')

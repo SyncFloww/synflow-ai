@@ -646,8 +646,8 @@ class DeleteAccountView(APIView):
         profile = getattr(user, 'profile', None)
 
         if profile and profile.provider == 'google':
-            confirm = request.data.get('confirm', True)
-            if not confirm:
+            confirm = request.data.get('confirm', False)
+            if confirm is not True:
                 return Response({'error': 'Confirmation required to delete account.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             password = request.data.get('password')

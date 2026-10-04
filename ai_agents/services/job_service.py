@@ -1,5 +1,10 @@
 import logging
 import threading
+import os
+from django.db import transaction
+from rest_framework.exceptions import Throttled
+from workspaces.models import Workspace
+from .configured_llm import generate_text
 from typing import Dict, Any, Optional
 from django.utils import timezone
 from ai_agents.models import AIJob, AIUsageRecord
@@ -32,18 +37,23 @@ class AIJobService:
             if existing:
                 return existing
 
-        job = AIJob.objects.create(
-            workspace=workspace,
-            user=user,
-            brand=brand,
-            job_type=job_type,
-            provider=provider,
-            model=model,
-            input_data=input_data,
-            status='QUEUED',
-            progress=0,
-            idempotency_key=idempotency_key
-        )
+        with transaction.atomic():
+            Workspace.objects.select_for_update().get(pk=workspace.pk)
+            limit = max(1, int(os.getenv('AI_DAILY_LIMIT', '30')))
+            if AIJob.objects.filter(workspace=workspace, created_at__date=timezone.now().date()).count() >= limit:
+                raise Throttled(detail='This workspace has reached its daily AI limit. Try again tomorrow.')
+            job = AIJob.objects.create(
+                workspace=workspace,
+                user=user,
+                brand=brand,
+                job_type=job_type,
+                provider=provider,
+                model=model,
+                input_data=input_data,
+                status='QUEUED',
+                progress=0,
+                idempotency_key=idempotency_key
+            )
         return job
 
     @staticmethod
@@ -91,21 +101,20 @@ class AIJobService:
             elif job.job_type == 'script':
                 job.progress = 30
                 job.save()
-                llm = LLMProviderRegistry.get(job.provider if job.provider != 'default' else None)
                 topic = job.input_data.get('topic', 'Product Launch')
                 platform = job.input_data.get('platform', 'tiktok')
                 duration = job.input_data.get('duration', 30)
                 prompt = (
                     f"Write a high-converting {platform} video script ({duration} seconds) for topic: '{topic}'. "
                     f"Provide separate fields: hook, body, transitions, cta, visual_directions, b_roll_suggestions, voiceover_text, onscreen_text. "
-                    f"Tone: {job.input_data.get('tone', 'energetic')}. Output as clean JSON."
+                    f"Follow the saved brand voice. Optional tone override: {job.input_data.get('tone', '')}. Output as clean JSON."
                 )
-                res = llm.generate_text(
+                res = generate_text(
                     prompt=prompt,
                     system_prompt=PromptManager().build_system_prompt(
                         task_type='script', platform=platform, brand=job.brand,
                     ),
-                    json_schema={"hook": ""},
+                    json_output=True,
                 )
                 job.progress = 80
                 output = res.structured_data or OutputParser().parse_json(res.text)

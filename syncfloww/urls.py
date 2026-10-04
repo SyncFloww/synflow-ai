@@ -5,9 +5,10 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from .views import HomeView
+from .views import HomeView, health
 
 urlpatterns = [
+    path('api/health/', health, name='health'),
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='home'),
     

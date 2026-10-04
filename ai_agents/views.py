@@ -7,7 +7,9 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from django.db import transaction
+from workspaces.permissions import get_user_workspace_role
 from google import genai
 from google.genai import types
 
@@ -74,6 +76,9 @@ def get_user_workspace(request):
                 return ws
         except Exception:
             pass
+
+    if ws_id and str(ws_id).strip() not in ('', 'undefined', 'null', 'None'):
+        raise PermissionDenied('The selected workspace is unavailable.')
 
     # Default to user's first active workspace
     member = WorkspaceMember.objects.filter(user=request.user, status__iexact='ACTIVE').first()
@@ -200,26 +205,50 @@ class AIContentProjectViewSet(viewsets.ModelViewSet):
 class AIScriptViewSet(viewsets.ModelViewSet):
     serializer_class = AIScriptSerializer
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'patch', 'delete', 'post', 'head', 'options']
 
     def get_queryset(self):
         ws = get_user_workspace(self.request)
-        if not ws:
-            return AIScript.objects.none()
-        return AIScript.objects.filter(workspace=ws).order_by('-updated_at')
+        qs = AIScript.objects.filter(workspace=ws).order_by('-updated_at') if ws else AIScript.objects.none()
+        brand_id = self.request.query_params.get('brand')
+        if brand_id:
+            if not str(brand_id).isdigit():
+                raise ValidationError({'brand': 'Invalid brand.'})
+            qs = qs.filter(brand_id=brand_id)
+        return qs
+
+    def require_manager(self, script):
+        if get_user_workspace_role(self.request.user, script.workspace) not in ('OWNER', 'ADMIN', 'MANAGER'):
+            raise PermissionDenied('Only brand managers can edit scripts.')
+
+    def create(self, request, *args, **kwargs):
+        return Response({'detail': 'Use the script generation endpoint.'}, status=405)
+
+    def perform_update(self, serializer):
+        self.require_manager(serializer.instance)
+        with transaction.atomic():
+            AIScript.objects.select_for_update().get(pk=serializer.instance.pk)
+            script = serializer.save()
+            AIScriptService.create_version(script, 'Manual edit')
+
+    def perform_destroy(self, instance):
+        self.require_manager(instance)
+        instance.delete()
 
     @action(detail=True, methods=['post'], url_path='version')
     def create_version(self, request, pk=None):
         script = self.get_object()
-        change = request.data.get('change_summary', 'Version save')
-        ver = AIScriptService.create_version(script, change)
-        return Response(AIScriptVersionSerializer(ver).data, status=status.HTTP_201_CREATED)
+        self.require_manager(script)
+        with transaction.atomic():
+            AIScript.objects.select_for_update().get(pk=script.pk)
+            ver = AIScriptService.create_version(script, str(request.data.get('change_summary', 'Version save'))[:255])
+        return Response(AIScriptVersionSerializer(ver).data, status=201)
 
     @action(detail=True, methods=['post'], url_path='convert-social')
     def convert_to_social(self, request, pk=None):
         script = self.get_object()
-        ws = script.workspace
-        brand = script.brand
-        social_items = AISocialContentService.convert_script_to_social(ws, request.user, brand, script)
+        self.require_manager(script)
+        social_items = AISocialContentService.convert_script_to_social(script.workspace, request.user, script.brand, script)
         return Response(AISocialContentSerializer(social_items, many=True).data)
 
 
@@ -249,7 +278,14 @@ class AIScriptGeneratorView(APIView):
         if brand_id is not None and brand is None:
             raise ValidationError({'brand': 'Choose a brand in the active workspace.'})
         
-        script = AIScriptService.generate_script(ws, request.user, brand, request.data)
+        from .input_serializers import ScriptInputSerializer
+        serializer = ScriptInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if brand is None:
+            raise ValidationError({'brand': 'Choose a brand before generating.'})
+        if get_user_workspace_role(request.user, ws) not in ('OWNER', 'ADMIN', 'MANAGER'):
+            raise PermissionDenied('Only brand managers can generate scripts.')
+        script = AIScriptService.generate_script(ws, request.user, brand, serializer.validated_data)
         return Response(AIScriptSerializer(script).data, status=status.HTTP_201_CREATED)
 
 

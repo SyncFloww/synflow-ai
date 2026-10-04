@@ -30,3 +30,20 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['recent_tasks'] = AgentTask.objects.order_by('-created_at')[:8]
         
         return context
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+import os
+
+@require_GET
+def health(request):
+    """Release/readiness signal without exposing records or server settings."""
+    try:
+        from social.models import BrandMessage, BrandLead
+        # Check that the deployed database has both new tables.
+        BrandMessage.objects.values('id').first()
+        BrandLead.objects.values('id').first()
+        return JsonResponse({'status': 'ready', 'release': os.getenv('VERCEL_GIT_COMMIT_SHA', '')})
+    except Exception:
+        return JsonResponse({'status': 'database_not_ready'}, status=503)

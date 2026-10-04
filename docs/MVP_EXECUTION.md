@@ -10,8 +10,8 @@ first; no purchase or paid fallback is authorized. Keep credentials server-side.
 
 Reuse Django/DRF and React. Keep one brand for initial testers while retaining
 the existing workspace and brand model for later plans. Do not delete existing
-business records when simplifying navigation. Ship verified increments rather
-than a wholesale rewrite. Use preview branches before production integration.
+business records when simplifying navigation. Push authorized changes to main in both repositories. The existing Vercel
+integration deploys them; acceptance testing is live only at the owner’s request.
 
 ## Execution sequence within the ten-day deadline
 
@@ -62,3 +62,10 @@ No new environment variables or database migrations are required for this
 increment. Live inference and deployment verification are separate from local
 tests. Provider choice and free-tier feasibility remain unverified; do not
 advertise unlimited free inference or guaranteed performance.
+
+
+## Current implementation status
+
+The historical findings above describe the initial audit. For the current code
+and remaining work, use [MVP_CHECKLIST.md](MVP_CHECKLIST.md). Environment and live
+acceptance instructions are in [RELEASE_SETUP.md](RELEASE_SETUP.md).

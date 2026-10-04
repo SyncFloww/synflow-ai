@@ -17,16 +17,19 @@ class BrandAssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrandAsset
         fields = '__all__'
+        read_only_fields = ['id', 'brand', 'created_at', 'updated_at']
 
 class BrandVoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrandVoice
         fields = '__all__'
+        read_only_fields = ['id', 'brand', 'created_at', 'updated_at']
 
 class BrandGuidelineSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrandGuideline
         fields = '__all__'
+        read_only_fields = ['id', 'brand', 'created_at', 'updated_at']
 
 class BrandSerializer(serializers.ModelSerializer):
     workspace_name = serializers.ReadOnlyField(source='workspace.name')
