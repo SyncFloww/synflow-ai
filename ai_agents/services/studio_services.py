@@ -96,7 +96,9 @@ class AIIdeaService:
             input_data=params,
             provider=os.getenv('AI_PROVIDER', 'gemini')
         )
-        AIJobService.dispatch_job_async(str(job.id))
+        job = AIJobService.execute_job_sync(str(job.id))
+        if job is None or job.status != 'COMPLETED':
+            raise ScriptGenerationUnavailable('Idea generation is unavailable. Please try again.')
         return job
 
 

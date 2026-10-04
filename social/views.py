@@ -23,8 +23,9 @@ from .providers import get_provider, list_providers
 from .services import OAuthTokenService
 
 from .assistant_actions import BrandAssistantActions
+from .idea_actions import BrandIdeaActions
 
-class BrandViewSet(BrandAssistantActions, viewsets.ModelViewSet):
+class BrandViewSet(BrandIdeaActions, BrandAssistantActions, viewsets.ModelViewSet):
     serializer_class = BrandSerializer
     permission_classes = [permissions.IsAuthenticated]
 

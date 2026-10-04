@@ -71,6 +71,7 @@ All boxes below remain open until verified on the existing live URLs.
 - [ ] TXT/PDF/DOCX upload respects consent, size/type/text limits; deletion removes reference text.
 - [ ] Voice input requests microphone permission and leaves editable text.
 - [ ] Script generation uses saved brand facts; errors do not create a script.
+- [ ] Ideas generate/save as drafts; edits clear approval; only approved brand ideas convert to scripts.
 - [ ] Script edits create versions; script deletion removes its history.
 - [ ] Switching workspaces never shows another workspace's saved content.
 - [ ] Viewers cannot mutate brand resources, scripts, assistant history or leads.
@@ -106,3 +107,13 @@ consent-recorded contacts. It is not the complete social automation MVP.
 - https://ai.google.dev/gemini-api/docs/models
 - https://ai.google.dev/api/generate-content
 - https://huggingface.co/docs/inference-providers/tasks/chat-completion
+
+
+## Idea library increment
+
+Migration `social.0011` adds brand ideas. Managers can save their own ideas or
+request five AI suggestions, edit/delete them, and explicitly approve them.
+Saving any edit clears approval. Script generation can accept an `idea_id` only
+when it belongs to the chosen brand and has approval; it uses the saved idea
+fields. This approval is for script development, not authorization to publish.
+No additional environment variables are needed. Live acceptance is pending.

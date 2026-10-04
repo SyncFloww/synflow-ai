@@ -6,3 +6,4 @@ class ScriptInputSerializer(serializers.Serializer):
     tone = serializers.CharField(max_length=100, required=False, allow_blank=True)
     audience = serializers.CharField(max_length=255, required=False, allow_blank=True)
     duration = serializers.IntegerField(min_value=15, max_value=240, default=30)
+    idea_id = serializers.IntegerField(min_value=1, required=False)

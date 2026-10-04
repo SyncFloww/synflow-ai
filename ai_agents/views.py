@@ -168,13 +168,7 @@ class AIJobViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='retry')
     def retry(self, request, pk=None):
         job = self.get_object()
-        job.status = 'QUEUED'
-        job.progress = 0
-        job.error = ''
-        job.retry_count += 1
-        job.save()
-        AIJobService.dispatch_job_async(str(job.id))
-        return Response(AIJobSerializer(job).data)
+        return Response({'detail': 'Start a new generation from its feature to apply current limits and permissions.'}, status=405)
 
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel(self, request, pk=None):
@@ -262,8 +256,15 @@ class AIIdeaGeneratorView(APIView):
         brand_id = request.data.get('brand')
         brand = Brand.objects.filter(id=brand_id, workspace=ws).first() if brand_id and str(brand_id).isdigit() else None
         
-        job = AIIdeaService.generate_ideas(ws, request.user, brand, request.data)
-        return Response(AIJobSerializer(job).data, status=status.HTTP_202_ACCEPTED)
+        from social.idea_actions import IdeaRequest
+        data = IdeaRequest(data=request.data)
+        data.is_valid(raise_exception=True)
+        if brand is None:
+            raise ValidationError({'brand': 'Choose a brand in this workspace.'})
+        if get_user_workspace_role(request.user, ws) not in ('OWNER', 'ADMIN', 'MANAGER'):
+            raise PermissionDenied('Only brand managers can generate ideas.')
+        job = AIIdeaService.generate_ideas(ws, request.user, brand, data.validated_data)
+        return Response(AIJobSerializer(job).data, status=status.HTTP_201_CREATED)
 
 
 class AIScriptGeneratorView(APIView):
@@ -285,7 +286,17 @@ class AIScriptGeneratorView(APIView):
             raise ValidationError({'brand': 'Choose a brand before generating.'})
         if get_user_workspace_role(request.user, ws) not in ('OWNER', 'ADMIN', 'MANAGER'):
             raise PermissionDenied('Only brand managers can generate scripts.')
-        script = AIScriptService.generate_script(ws, request.user, brand, serializer.validated_data)
+        values = dict(serializer.validated_data)
+        idea_id = values.pop('idea_id', None)
+        if idea_id:
+            from social.models import BrandIdea
+            idea = BrandIdea.objects.filter(pk=idea_id, brand=brand, approved_at__isnull=False).first()
+            if idea is None:
+                raise ValidationError({'idea_id': 'Choose an approved idea from this brand.'})
+            values['approved_idea'] = {'title': idea.title, 'hook': idea.hook, 'angle': idea.angle, 'cta': idea.cta}
+            values['topic'] = idea.title
+            values['platform'] = idea.platform
+        script = AIScriptService.generate_script(ws, request.user, brand, values)
         return Response(AIScriptSerializer(script).data, status=status.HTTP_201_CREATED)
 
 

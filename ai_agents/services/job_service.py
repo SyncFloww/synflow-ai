@@ -1,4 +1,5 @@
 import logging
+import json
 import threading
 import os
 from django.db import transaction
@@ -83,19 +84,20 @@ class AIJobService:
             if job.job_type == 'idea':
                 job.progress = 30
                 job.save()
-                llm = LLMProviderRegistry.get(job.provider if job.provider != 'default' else None)
-                brand_name = job.brand.name if job.brand else job.input_data.get('brand', 'Syncfloww')
-                topic = job.input_data.get('topic', 'Content Marketing Strategy')
-                prompt = (
-                    f"Generate 5 viral content ideas with hooks, angles, content pillars, CTA suggestions, "
-                    f"and recommended platforms for {brand_name} regarding topic: '{topic}'. "
-                    f"Industry: {job.input_data.get('industry', 'Tech')}, Target Audience: {job.input_data.get('target_audience', 'Creators')}, "
-                    f"Tone: {job.input_data.get('tone', 'engaging')}, Language: {job.input_data.get('language', 'en')}. "
-                    f"Respond in structured JSON format with key 'ideas' containing list of items."
+                topic = job.input_data.get('topic', 'Content ideas')
+                platform = job.input_data.get('platform', 'instagram')
+                res = generate_text(
+                    prompt=f"Generate exactly 5 content ideas for {platform} about {topic}. Return JSON with ideas array. Each idea has title, hook, angle and cta as non-empty text. Use supported brand facts and do not guarantee results.",
+                    system_prompt=PromptManager().build_system_prompt(brand=job.brand, platform=platform),
+                    json_output=True,
                 )
-                res = llm.generate_text(prompt=prompt, json_schema={"ideas": []})
-                job.progress = 80
-                output = res.structured_data if res.structured_data else {"ideas": [{"title": topic, "hook": res.text[:100], "angle": "Direct", "pillar": "Educational", "cta": "Follow for more", "platforms": ["instagram", "tiktok"]}]}
+                items = res.structured_data.get('ideas')
+                if not isinstance(items, list) or len(items) != 5 or any(
+                    not isinstance(item, dict) or any(not isinstance(item.get(field), str) or not item[field].strip() for field in ('title', 'hook', 'angle', 'cta'))
+                    for item in items
+                ):
+                    raise ValueError('AI returned incomplete ideas.')
+                output = {'ideas': items}
                 cost = res.estimated_cost
 
             elif job.job_type == 'script':
@@ -109,6 +111,8 @@ class AIJobService:
                     f"Provide separate fields: hook, body, transitions, cta, visual_directions, b_roll_suggestions, voiceover_text, onscreen_text. "
                     f"Follow the saved brand voice. Optional tone override: {job.input_data.get('tone', '')}. Output as clean JSON."
                 )
+                if job.input_data.get('approved_idea'):
+                    prompt += '\nUser-approved idea to develop (source material): ' + json.dumps(job.input_data['approved_idea'])
                 res = generate_text(
                     prompt=prompt,
                     system_prompt=PromptManager().build_system_prompt(

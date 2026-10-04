@@ -20,7 +20,7 @@ not a requirement to wait between tasks.
 - [x] Brand-scoped script library, search of loaded results, editing and versions
 - [x] Script deletion and copy
 - [x] Workspace AI daily request limit
-- [ ] Dedicated idea library and approval workflow
+- [x] Dedicated brand idea library with editing, review, approval and conversion to scripts
 - [ ] Complete live verification of provider quota, generation and editing
 
 ## Social automation

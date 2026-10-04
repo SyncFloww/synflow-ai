@@ -297,3 +297,18 @@ class BrandLead(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-id']
+
+class BrandIdea(models.Model):
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='ideas')
+    title = models.CharField(max_length=255)
+    hook = models.TextField()
+    angle = models.TextField()
+    cta = models.TextField()
+    platform = models.CharField(max_length=50, default='instagram')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at', '-id']
