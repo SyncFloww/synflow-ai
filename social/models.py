@@ -54,6 +54,8 @@ class BrandProfile(models.Model):
     products_services = models.JSONField(default=list, blank=True)
     unique_selling_points = models.JSONField(default=list, blank=True)
     do_not_say = models.JSONField(default=list, blank=True)
+    onboarding_answers = models.JSONField(default=dict, blank=True)
+    onboarding_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -23,7 +23,6 @@ router.register('projects', AIContentProjectViewSet, basename='aiproject')
 router.register('scripts', AIScriptViewSet, basename='aiscript')
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('agents/<str:agent_type>/execute/', ExecuteAgentView.as_view(), name='execute_agent'),
     path('content/generate/', GenerateContentView.as_view(), name='generate_content'),
     
@@ -40,4 +39,6 @@ urlpatterns = [
     path('captions/generate/', AICaptionView.as_view(), name='ai_captions_generate'),
     path('editor/action/', AIMagicEditorView.as_view(), name='ai_editor_action'),
     path('usage/', AIUsageView.as_view(), name='ai_usage'),
+    # Match named actions before router detail routes (e.g. scripts/<pk>/).
+    path('', include(router.urls)),
 ]

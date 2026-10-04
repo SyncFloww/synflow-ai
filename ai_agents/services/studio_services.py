@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Any, List, Optional
 from django.utils import timezone
+from rest_framework.exceptions import APIException
 from media.models import Media
 from content.models import Content, ContentVersion
 from ai_agents.models import (
@@ -21,6 +22,12 @@ from ai_agents.services.job_service import AIJobService
 from ai_agents.providers import LLMProviderRegistry
 
 logger = logging.getLogger(__name__)
+
+
+class ScriptGenerationUnavailable(APIException):
+    status_code = 503
+    default_detail = 'Script generation is unavailable. Please try again shortly.'
+    default_code = 'script_generation_unavailable'
 
 class ContentGeneratorService:
     @staticmethod
@@ -104,6 +111,8 @@ class AIScriptService:
             provider=params.get('provider', 'gemini')
         )
         job = AIJobService.execute_job_sync(str(job.id))
+        if job is None or job.status != 'COMPLETED':
+            raise ScriptGenerationUnavailable()
         out = job.output_data
 
         script = AIScript.objects.create(
@@ -117,10 +126,10 @@ class AIScriptService:
             target_audience=params.get('audience', ''),
             tone=params.get('tone', ''),
             duration_seconds=params.get('duration', 30),
-            hook=out.get('hook') or f"Stop scrolling! Here is what you need to know about {params.get('topic', 'this topic')}:",
-            body=out.get('body') or f"First, focus on high quality content. Second, stay consistent.",
+            hook=out['hook'],
+            body=out['body'],
             transitions=out.get('transitions', 'Fast cut'),
-            cta=out.get('cta') or "Follow for more strategies!",
+            cta=out['cta'],
             visual_directions=out.get('visual_directions', 'Creator on camera with captions.'),
             b_roll_suggestions=out.get('b_roll_suggestions', []),
             voiceover_text=out.get('voiceover_text') or out.get('body', ''),
