@@ -7,7 +7,7 @@ from .views import (
     AIJobViewSet, AIContentProjectViewSet, AIScriptViewSet,
     AIIdeaGeneratorView, AIScriptGeneratorView, AIImageGeneratorView, AIVideoGeneratorView,
     AIVoiceStudioView, CustomVoiceView, VoiceConsentView, AIAudioMixerView,
-    AICaptionView, AIMagicEditorView, AIUsageView
+    AICaptionView, AIMagicEditorView, AIUsageView, WorkspaceUsageView
 )
 
 router = DefaultRouter()
@@ -38,6 +38,7 @@ urlpatterns = [
     path('audio/mix/', AIAudioMixerView.as_view(), name='ai_audio_mix'),
     path('captions/generate/', AICaptionView.as_view(), name='ai_captions_generate'),
     path('editor/action/', AIMagicEditorView.as_view(), name='ai_editor_action'),
+    path('workspace-usage/', WorkspaceUsageView.as_view(), name='workspace_usage'),
     path('usage/', AIUsageView.as_view(), name='ai_usage'),
     # Match named actions before router detail routes (e.g. scripts/<pk>/).
     path('', include(router.urls)),

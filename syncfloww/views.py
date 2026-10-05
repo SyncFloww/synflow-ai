@@ -45,6 +45,8 @@ def health(request):
         BrandMessage.objects.values('id').first()
         BrandLead.objects.values('id').first()
         BrandIdea.objects.values('id').first()
+        from ai_agents.models import AIScript
+        AIScript.objects.values('review_status').first()
         return JsonResponse({'status': 'ready', 'release': os.getenv('VERCEL_GIT_COMMIT_SHA', '')})
     except Exception:
         return JsonResponse({'status': 'database_not_ready'}, status=503)

@@ -117,3 +117,39 @@ Saving any edit clears approval. Script generation can accept an `idea_id` only
 when it belongs to the chosen brand and has approval; it uses the saved idea
 fields. This approval is for script development, not authorization to publish.
 No additional environment variables are needed. Live acceptance is pending.
+
+
+## Script review, usage and settings increment
+
+No new environment variables are required. Additive migration
+`ai_agents.0004_script_review` adds script review status and approver metadata.
+Existing scripts start as drafts. Approval applies to saved script content;
+it does not enable social publishing. Content edits and version restoration
+clear approval. Review/approval/restoration require the current `updated_at`
+revision so a stale browser cannot approve unseen changes.
+
+`GET /api/ai/workspace-usage/` shows real workspace request totals for the
+current UTC day. The same UTC window and limit function enforce quota and
+report it. Invalid `AI_DAILY_LIMIT` values fall back to 30, and values are
+bounded to 1–10,000 requests. No secret values are returned.
+
+`GET /api/social/brands/{id}/export/` lets brand managers download core brand
+records in NDJSON: profile, voice, guidelines, reference text, assistant
+conversation, contacts, ideas, scripts and versions. It excludes credentials,
+OAuth tokens, provider raw responses and unrelated workspace/account records.
+The download contains contact data and should be stored securely. It is not
+a complete account export or a legal privacy policy.
+
+Settings now saves display names, changes existing password-account passwords,
+sets the device theme and offers the explicit export download. Social-account
+passwords remain managed by their sign-in provider. Placeholder notification
+switches and nonfunctional support links have been removed.
+
+Live acceptance remains open:
+- [ ] Submit a complete script for review, approve it, and confirm status persists.
+- [ ] Edit or restore it and confirm approval clears and history remains.
+- [ ] Edit in another browser and confirm a stale approval/update is rejected.
+- [ ] Usage agrees with workspace requests and resets at midnight UTC.
+- [ ] Display-name updates persist; password change requires current password.
+- [ ] Brand export contains only the selected brand's core records, no credentials.
+- [ ] Viewer/member roles cannot approve scripts or download manager-only exports.

@@ -179,6 +179,10 @@ class AIScript(models.Model):
     voiceover_text = models.TextField(blank=True, default='')
     onscreen_text = models.TextField(blank=True, default='')
 
+    review_status = models.CharField(max_length=20, choices=[('DRAFT', 'Draft'), ('IN_REVIEW', 'In review'), ('APPROVED', 'Approved')], default='DRAFT')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

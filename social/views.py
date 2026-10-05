@@ -24,8 +24,9 @@ from .services import OAuthTokenService
 
 from .assistant_actions import BrandAssistantActions
 from .idea_actions import BrandIdeaActions
+from .data_actions import BrandDataActions
 
-class BrandViewSet(BrandIdeaActions, BrandAssistantActions, viewsets.ModelViewSet):
+class BrandViewSet(BrandDataActions, BrandIdeaActions, BrandAssistantActions, viewsets.ModelViewSet):
     serializer_class = BrandSerializer
     permission_classes = [permissions.IsAuthenticated]
 

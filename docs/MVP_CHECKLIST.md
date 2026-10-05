@@ -19,7 +19,11 @@ not a requirement to wait between tasks.
 - [x] Validated scripts with no fake fallback on failed generation
 - [x] Brand-scoped script library, search of loaded results, editing and versions
 - [x] Script deletion and copy
+- [x] Saved-script review and approval; edits and restored versions clear approval
+- [x] Restore version content as a new draft while keeping history
+- [x] Revision checks prevent approving a script that changed since it was opened
 - [x] Workspace AI daily request limit
+- [x] Usage screen with request counts, remaining allowance and reset time
 - [x] Dedicated brand idea library with editing, review, approval and conversion to scripts
 - [ ] Complete live verification of provider quota, generation and editing
 
@@ -39,6 +43,7 @@ not a requirement to wait between tasks.
 - [x] Comments isolated by owner; explicit confirmation for social-login account deletion
 - [x] Repository-controlled Django runtime and production migration build hook
 - [x] Public readiness endpoint exposing release SHA without customer records
+- [x] Working display-name settings, password change, device theme and core brand-data export
 - [ ] Complete tenant/security audit of legacy modules
 - [ ] Signing secret and OAuth encryption migration
 - [ ] Privacy/terms/business identity, optional-cookie and email consent workflows

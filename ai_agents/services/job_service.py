@@ -6,6 +6,7 @@ from django.db import transaction
 from rest_framework.exceptions import Throttled
 from workspaces.models import Workspace
 from .configured_llm import generate_text
+from .usage_policy import daily_limit, day_window
 from typing import Dict, Any, Optional
 from django.utils import timezone
 from ai_agents.models import AIJob, AIUsageRecord
@@ -40,8 +41,9 @@ class AIJobService:
 
         with transaction.atomic():
             Workspace.objects.select_for_update().get(pk=workspace.pk)
-            limit = max(1, int(os.getenv('AI_DAILY_LIMIT', '30')))
-            if AIJob.objects.filter(workspace=workspace, created_at__date=timezone.now().date()).count() >= limit:
+            limit = daily_limit()
+            start, reset = day_window()
+            if AIJob.objects.filter(workspace=workspace, created_at__gte=start, created_at__lt=reset).count() >= limit:
                 raise Throttled(detail='This workspace has reached its daily AI limit. Try again tomorrow.')
             job = AIJob.objects.create(
                 workspace=workspace,

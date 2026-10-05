@@ -7,7 +7,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, APIException
 from django.db import transaction
 from workspaces.permissions import get_user_workspace_role
 from google import genai
@@ -196,6 +196,10 @@ class AIContentProjectViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user, workspace=ws)
 
 
+class ScriptChanged(APIException):
+    status_code = 409
+    default_detail = 'This script changed since you opened it. Reload its saved version before continuing.'
+
 class AIScriptViewSet(viewsets.ModelViewSet):
     serializer_class = AIScriptSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -221,9 +225,22 @@ class AIScriptViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         self.require_manager(serializer.instance)
         with transaction.atomic():
-            AIScript.objects.select_for_update().get(pk=serializer.instance.pk)
-            script = serializer.save()
+            serializer.instance = AIScript.objects.select_for_update().get(pk=serializer.instance.pk)
+            self.check_revision(serializer.instance)
+            script = serializer.save(review_status='DRAFT', approved_at=None, approved_by=None)
             AIScriptService.create_version(script, 'Manual edit')
+
+    def check_revision(self, script, required=False):
+        from django.utils.dateparse import parse_datetime
+        expected = self.request.data.get('expected_updated_at')
+        if expected is None and not required:
+            return
+        try:
+            parsed = parse_datetime(expected) if isinstance(expected, str) else None
+        except (ValueError, TypeError):
+            parsed = None
+        if parsed is None or parsed != script.updated_at:
+            raise ScriptChanged()
 
     def perform_destroy(self, instance):
         self.require_manager(instance)
@@ -234,9 +251,55 @@ class AIScriptViewSet(viewsets.ModelViewSet):
         script = self.get_object()
         self.require_manager(script)
         with transaction.atomic():
-            AIScript.objects.select_for_update().get(pk=script.pk)
+            script = AIScript.objects.select_for_update().get(pk=script.pk)
             ver = AIScriptService.create_version(script, str(request.data.get('change_summary', 'Version save'))[:255])
         return Response(AIScriptVersionSerializer(ver).data, status=201)
+
+    @action(detail=True, methods=['post'], url_path='review')
+    def submit_review(self, request, pk=None):
+        return self.change_review(request, 'IN_REVIEW')
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        return self.change_review(request, 'APPROVED')
+
+    def change_review(self, request, target):
+        script = self.get_object()
+        self.require_manager(script)
+        from django.utils import timezone
+        with transaction.atomic():
+            script = AIScript.objects.select_for_update().get(pk=script.pk)
+            self.check_revision(script, required=True)
+            if not all(getattr(script, field).strip() for field in ('title', 'hook', 'body', 'cta')):
+                raise ValidationError('Complete the title, hook, body and call to action before review.')
+            if target == 'APPROVED' and script.review_status != 'IN_REVIEW':
+                raise ValidationError('Submit the saved script for review before approving it.')
+            script.review_status = target
+            script.approved_at = timezone.now() if target == 'APPROVED' else None
+            script.approved_by = request.user if target == 'APPROVED' else None
+            script.save(update_fields=['review_status', 'approved_at', 'approved_by', 'updated_at'])
+            return Response(AIScriptSerializer(script).data)
+
+    @action(detail=True, methods=['post'], url_path='restore-version')
+    def restore_version(self, request, pk=None):
+        script = self.get_object()
+        self.require_manager(script)
+        version_id = request.data.get('version_id')
+        if not str(version_id).isdigit():
+            raise ValidationError({'version_id': 'Choose a saved version.'})
+        from django.shortcuts import get_object_or_404
+        with transaction.atomic():
+            script = AIScript.objects.select_for_update().get(pk=script.pk)
+            self.check_revision(script, required=True)
+            version = get_object_or_404(AIScriptVersion, pk=version_id, script=script)
+            for field in ('hook', 'body', 'cta', 'voiceover_text', 'visual_directions'):
+                setattr(script, field, getattr(version, field))
+            script.review_status = 'DRAFT'
+            script.approved_at = None
+            script.approved_by = None
+            script.save()
+            AIScriptService.create_version(script, f'Restored version {version.version_number}')
+            return Response(AIScriptSerializer(script).data)
 
     @action(detail=True, methods=['post'], url_path='convert-social')
     def convert_to_social(self, request, pk=None):
@@ -553,3 +616,16 @@ class GenerateContentView(APIView):
             platform=platform
         )
         return Response(GeneratedContentSerializer(gen_content).data, status=status.HTTP_201_CREATED)
+
+
+class WorkspaceUsageView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        workspace = get_user_workspace(request)
+        if workspace is None:
+            raise ValidationError('Choose a workspace.')
+        from .services.usage_policy import usage_snapshot
+        response = Response(usage_snapshot(workspace))
+        response['Cache-Control'] = 'no-store'
+        return response
