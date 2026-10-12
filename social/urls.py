@@ -8,6 +8,7 @@ from .views import (
     ConnectSocialAccountView, VerifySocialAccountView, DisconnectSocialAccountView
 )
 
+from .meta_automation import MetaAutomation, MetaCancelPost, MetaCron
 from .meta_api import MetaAccounts, MetaCallback, MetaAccount, MetaPosts, MetaComments
 
 router = DefaultRouter()
@@ -21,6 +22,9 @@ router.register('accounts', SocialAccountViewSet, basename='socialaccount')
 router.register('credentials', PlatformCredentialViewSet, basename='platformcredential')
 
 urlpatterns = [
+    path('meta/cron/', MetaCron.as_view()),
+    path('meta/accounts/<int:account_id>/automation/', MetaAutomation.as_view()),
+    path('meta/posts/<int:post_id>/cancel/', MetaCancelPost.as_view()),
     path('meta/brands/<int:brand_id>/accounts/', MetaAccounts.as_view()),
     path('meta/callback/', MetaCallback.as_view()),
     path('meta/accounts/<int:account_id>/', MetaAccount.as_view()),

@@ -11,11 +11,12 @@ from django.core import signing
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException, ValidationError, PermissionDenied
 from rest_framework import permissions
-from .models import Brand, MetaSession, MetaConnection, MetaPublication
+from .models import Brand, MetaSession, MetaConnection, MetaPublication, MetaReply
 from workspaces.permissions import get_user_workspace_role
 
 class MetaUnavailable(APIException):
@@ -58,7 +59,7 @@ def brand_for(request, brand_id):
     return brand
 
 def public_connection(c):
-    return {'id': c.id, 'platform': c.platform, 'name': c.name, 'remote_id': c.remote_id, 'active': c.active}
+    return {'id': c.id, 'platform': c.platform, 'name': c.name, 'remote_id': c.remote_id, 'active': c.active, 'auto_reply': c.auto_reply}
 
 def access_token(c):
     try:
@@ -119,7 +120,7 @@ class MetaCallback(APIView):
                 ig = page.get('instagram_business_account') or {}
                 if ig.get('id'): targets.append(('instagram', ig['id'], ig.get('username', 'Instagram')))
                 for platform, remote_id, name in targets:
-                    c, _ = MetaConnection.objects.update_or_create(brand=brand, platform=platform, remote_id=str(remote_id), defaults={'name': name[:255], 'active': True, 'encrypted_token': Fernet(key.encode()).encrypt(page['access_token'].encode()).decode()})
+                    c, _ = MetaConnection.objects.update_or_create(brand=brand, platform=platform, remote_id=str(remote_id), defaults={'name': name[:255], 'active': True, 'auto_reply': False, 'automation_user': None, 'reply_enabled_at': None, 'encrypted_token': Fernet(key.encode()).encrypt(page['access_token'].encode()).decode()})
                     saved.append(public_connection(c))
         if not saved: raise ValidationError('No authorised Facebook Pages or linked Instagram professional accounts were found.')
         return Response({'accounts': saved, 'brand_id': brand.id})
@@ -130,6 +131,8 @@ class MetaAccount(APIView):
         c = get_object_or_404(MetaConnection, id=account_id)
         brand_for(request, c.brand_id)
         c.active = False
+        c.auto_reply = False
+        c.automation_user = None
         c.encrypted_token = ''
         c.save()
         return Response(status=204)
@@ -139,7 +142,7 @@ class MetaPosts(APIView):
     def get(self, request, account_id):
         c = get_object_or_404(MetaConnection, id=account_id, active=True)
         brand_for(request, c.brand_id)
-        return Response(list(MetaPublication.objects.filter(connection=c).order_by('-created_at').values('id', 'caption', 'status', 'remote_id', 'created_at')[:100]))
+        return Response(list(MetaPublication.objects.filter(connection=c).order_by('-created_at').values('id', 'caption', 'status', 'remote_id', 'created_at', 'scheduled_at')[:100]))
     def post(self, request, account_id):
         c = get_object_or_404(MetaConnection, id=account_id, active=True)
         brand_for(request, c.brand_id)
@@ -151,31 +154,19 @@ class MetaPosts(APIView):
         if c.platform == 'instagram' and not image: raise ValidationError('Instagram requires a public image URL for this post type.')
         try: request_id = uuid.UUID(str(request.data.get('request_id')))
         except ValueError: raise ValidationError('A valid publication request ID is required.') from None
-        token = access_token(c)
+        scheduled = request.data.get('scheduled_at')
+        when = parse_datetime(scheduled) if isinstance(scheduled, str) else None
+        if scheduled and (not when or timezone.is_naive(when) or when <= timezone.now()):
+            raise ValidationError('Choose a future scheduled time with a timezone.')
+        access_token(c)
         with transaction.atomic():
             # Serialise duplicate requests for an account. Never retry an uncertain send.
             MetaConnection.objects.select_for_update().get(id=c.id)
-            post, created = MetaPublication.objects.get_or_create(request_id=request_id, defaults={'connection': c, 'caption': caption, 'image_url': image})
+            post, created = MetaPublication.objects.get_or_create(request_id=request_id, defaults={'connection': c, 'caption': caption, 'image_url': image, 'scheduled_at': when, 'status': 'scheduled' if when else 'sending', 'requested_by': request.user})
             if not created:
                 if post.connection_id != c.id: raise ValidationError('Publication request ID already used.')
                 return Response({'id': post.id, 'status': post.status, 'remote_id': post.remote_id})
-        try:
-            if c.platform == 'facebook':
-                result = graph('POST', c.remote_id + ('/photos' if image else '/feed'), token, **({'url': image, 'caption': caption} if image else {'message': caption}))
-                remote = result.get('post_id') or result.get('id')
-            else:
-                container = graph('POST', c.remote_id + '/media', token, image_url=image, caption=caption)
-                if not container.get('id'): raise MetaUnavailable()
-                result = graph('POST', c.remote_id + '/media_publish', token, creation_id=container['id'])
-                remote = result.get('id')
-            if not remote: raise MetaUnavailable()
-            post.remote_id = str(remote)
-            post.status = 'published'
-            post.save()
-        except MetaUnavailable:
-            post.status = 'uncertain'
-            post.save(update_fields=['status'])
-            raise MetaUnavailable('Publishing was not confirmed. Check the social account before attempting another post to avoid duplicates.') from None
+        if post.status == 'sending': send_publication(post)
         return Response({'id': post.id, 'status': post.status, 'remote_id': post.remote_id}, status=201)
 
 class MetaComments(APIView):
@@ -198,5 +189,46 @@ class MetaComments(APIView):
         comments = graph('GET', p.remote_id + '/comments', token, fields='id', limit=50).get('data', [])
         if comment not in [str(x['id']) for x in comments]: raise PermissionDenied('Comment does not belong to this post or is outside the current page.')
         edge = '/comments' if p.connection.platform == 'facebook' else '/replies'
-        result = graph('POST', comment + edge, token, message=text)
-        return Response({'id': result.get('id')}, status=201)
+        with transaction.atomic():
+            record, created = MetaReply.objects.get_or_create(publication=p, comment_id=comment)
+            record = MetaReply.objects.select_for_update().get(id=record.id)
+            if not created and record.status != 'needs_review':
+                raise ValidationError('This comment already has a reply attempt. Check reply history before sending again.')
+            record.reply = text
+            record.status = 'sending'
+            record.save()
+        try:
+            result = graph('POST', comment + edge, token, message=text)
+            if not result.get('id'): raise MetaUnavailable()
+            record.status = 'sent'
+            record.remote_id = str(result['id'])
+            record.save()
+        except MetaUnavailable:
+            record.status = 'uncertain'
+            record.save(update_fields=['status'])
+            raise MetaUnavailable('Reply not confirmed. Check the platform before trying again.') from None
+        return Response({'id': record.remote_id}, status=201)
+
+def send_publication(post):
+    c = post.connection
+    caption, image = post.caption, post.image_url
+    try:
+        c.refresh_from_db()
+        if not c.active: raise MetaUnavailable('This social account was disconnected.')
+        token = access_token(c)
+        if c.platform == 'facebook':
+            result = graph('POST', c.remote_id + ('/photos' if image else '/feed'), token, **({'url': image, 'caption': caption} if image else {'message': caption}))
+            remote = result.get('post_id') or result.get('id')
+        else:
+            container = graph('POST', c.remote_id + '/media', token, image_url=image, caption=caption)
+            if not container.get('id'): raise MetaUnavailable()
+            result = graph('POST', c.remote_id + '/media_publish', token, creation_id=container['id'])
+            remote = result.get('id')
+        if not remote: raise MetaUnavailable()
+        post.remote_id = str(remote)
+        post.status = 'published'
+        post.save()
+    except MetaUnavailable:
+        post.status = 'uncertain'
+        post.save(update_fields=['status'])
+        raise MetaUnavailable('Publishing was not confirmed. Check the social account before attempting another post to avoid duplicates.') from None

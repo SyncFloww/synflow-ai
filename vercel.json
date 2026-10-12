@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "django",
-  "buildCommand": "sh scripts/vercel-build.sh"
+  "buildCommand": "sh scripts/vercel-build.sh",
+  "crons": [
+    {
+      "path": "/api/social/meta/cron/",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }
