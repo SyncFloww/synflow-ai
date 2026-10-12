@@ -216,6 +216,11 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Preserve django-cors-headers defaults and allow tenant selection from the SPA.
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = (*default_headers, "x-workspace-id")
+
 # AUTH_USER_MODEL uses Django's default auth.User (users app does not define a custom User model)
 
 SPECTACULAR_SETTINGS = {
