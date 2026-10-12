@@ -31,7 +31,7 @@ def generate_text(prompt, system_prompt='', json_output=False):
             text = data['choices'][0]['message']['content']
         elif provider == 'gemini':
             token = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_GENAI_API_KEY')
-            model = os.getenv('AI_MODEL', '')
+            model = os.getenv('AI_MODEL', '').strip()
             if not token or not model:
                 raise AIUnavailable('The AI provider or model is not configured yet.')
             # Restrict model names to a single path segment.
@@ -62,6 +62,18 @@ def generate_text(prompt, system_prompt='', json_output=False):
         return GenerationResult(text=text, structured_data=structured or {}, raw_response={'provider': provider, 'model': model})
     except AIUnavailable:
         raise
+    except requests.HTTPError as exc:
+        code = exc.response.status_code if exc.response is not None else None
+        messages = {
+            400: 'The AI provider rejected the request. Check the configured model and API key restrictions.',
+            401: 'The AI provider rejected its credentials. Check the backend API key.',
+            403: 'The AI provider denied access. Check the API key restrictions and model access for this Google project.',
+            404: 'The configured AI model was not found or is unavailable to this project. Check AI_MODEL.',
+            429: 'The AI provider quota or rate limit has been reached. Check the provider project quota before retrying.',
+        }
+        raise AIUnavailable(messages.get(code, 'The AI provider returned a service error. Please try again later.')) from None
+    except requests.Timeout:
+        raise AIUnavailable('The AI provider took too long to respond. Please try again.') from None
     except (requests.RequestException, ValueError, KeyError, IndexError, TypeError):
         # Never expose provider response bodies, API keys, or submitted brand context.
         raise AIUnavailable() from None
