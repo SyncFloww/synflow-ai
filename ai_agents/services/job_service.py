@@ -5,7 +5,7 @@ import os
 from django.db import transaction
 from rest_framework.exceptions import Throttled
 from workspaces.models import Workspace
-from .configured_llm import generate_text
+from .configured_llm import generate_text, AIUnavailable
 from .usage_policy import daily_limit, day_window
 from typing import Dict, Any, Optional
 from django.utils import timezone
@@ -282,6 +282,11 @@ class AIJobService:
             logger.error(f"Job execution error for {job_id}: {ex}")
             job.status = 'FAILED'
             job.error = str(ex)
+            # Only our sanitized provider exception is safe for the client.
+            if isinstance(ex, AIUnavailable):
+                job.output_data = {'failure_detail': str(ex.detail)}
+            else:
+                job.output_data = {}
             job.completed_at = timezone.now()
             job.save()
             return job

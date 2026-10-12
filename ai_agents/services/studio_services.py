@@ -115,7 +115,8 @@ class AIScriptService:
         )
         job = AIJobService.execute_job_sync(str(job.id))
         if job is None or job.status != 'COMPLETED':
-            raise ScriptGenerationUnavailable()
+            safe_detail = (job.output_data or {}).get('failure_detail') if job else None
+            raise ScriptGenerationUnavailable(safe_detail or ScriptGenerationUnavailable.default_detail)
         out = job.output_data
 
         script = AIScript.objects.create(
