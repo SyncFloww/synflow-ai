@@ -8,6 +8,8 @@ from .views import (
     ConnectSocialAccountView, VerifySocialAccountView, DisconnectSocialAccountView
 )
 
+from .meta_api import MetaAccounts, MetaCallback, MetaAccount, MetaPosts, MetaComments
+
 router = DefaultRouter()
 router.register('brands', BrandViewSet, basename='brand')
 router.register('brand-profiles', BrandProfileViewSet, basename='brandprofile')
@@ -19,6 +21,11 @@ router.register('accounts', SocialAccountViewSet, basename='socialaccount')
 router.register('credentials', PlatformCredentialViewSet, basename='platformcredential')
 
 urlpatterns = [
+    path('meta/brands/<int:brand_id>/accounts/', MetaAccounts.as_view()),
+    path('meta/callback/', MetaCallback.as_view()),
+    path('meta/accounts/<int:account_id>/', MetaAccount.as_view()),
+    path('meta/accounts/<int:account_id>/posts/', MetaPosts.as_view()),
+    path('meta/posts/<int:post_id>/comments/', MetaComments.as_view()),
     path('oauth/providers/', OAuthProvidersView.as_view(), name='oauth_providers'),
     path('oauth/authorize/', OAuthAuthorizeView.as_view(), name='oauth_authorize'),
     path('oauth/<str:provider>/authorize/', OAuthAuthorizeView.as_view(), name='oauth_provider_authorize'),

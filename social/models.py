@@ -312,3 +312,6 @@ class BrandIdea(models.Model):
 
     class Meta:
         ordering = ['-updated_at', '-id']
+
+# Registered separately to keep the existing social adapters isolated.
+from .meta_models import MetaSession, MetaConnection, MetaPublication
