@@ -55,3 +55,11 @@ scheduling and continuous replies require a compatible frequent scheduler.
 AI access denial remains a Google project/key configuration blocker until verified.
 This checklist covers this implemented release, not billing or other social
 platforms. Those parts of the broader MVP remain unfinished.
+
+
+## Facebook/TikTok increment — November 5, 2026
+
+Use [FACEBOOK_TIKTOK_SETUP.md](FACEBOOK_TIKTOK_SETUP.md) for the current
+platform variable list and exact redirect URLs. It adds TikTok creator publishing
+and reviewed Facebook Messenger access. TikTok business comments/inbox remain
+pending a separate implementation and platform approval. No new frontend secrets.

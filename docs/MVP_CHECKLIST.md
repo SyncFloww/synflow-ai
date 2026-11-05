@@ -50,3 +50,18 @@ not a requirement to wait between tasks.
 - [ ] Plans, billing and per-plan entitlements
 - [ ] Full mobile, keyboard and accessibility acceptance
 - [ ] End-to-end live acceptance and rollback verification
+
+
+## Facebook/TikTok increment — code implemented, live verification pending
+
+- [x] TikTok creator connection, encrypted token rotation and verified-prefix video publishing.
+- [x] Creator-specific preview/options/consent and private test audit gate.
+- [x] TikTok scheduled queue, cancellation and real processing status checks.
+- [x] Facebook Page-only scopes by default; optional Messenger permission.
+- [x] Reviewed Page Messenger text replies, ownership/window checks and request deduplication.
+- [x] PostgreSQL worker lock repair and cross-platform route isolation.
+- [ ] TikTok API for Business connection for comments and inbox (not yet implemented).
+- [ ] Owner app configuration, scopes/audit approvals and real platform acceptance tests.
+- [ ] Precise/frequent scheduling and real-time webhooks.
+
+See FACEBOOK_TIKTOK_SETUP.md for setup and limitations.

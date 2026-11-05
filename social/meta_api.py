@@ -53,7 +53,7 @@ def graph(method, path, token='', **params):
         raise MetaUnavailable() from None
 
 def brand_for(request, brand_id):
-    brand = get_object_or_404(Brand, id=brand_id, is_active=True)
+    brand = get_object_or_404(Brand, id=brand_id, is_active=True, workspace__is_active=True)
     if get_user_workspace_role(request.user, brand.workspace) not in ('OWNER', 'ADMIN', 'MANAGER'):
         raise PermissionDenied('Only brand managers can manage social accounts.')
     return brand
@@ -71,14 +71,16 @@ class MetaAccounts(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request, brand_id):
         brand = brand_for(request, brand_id)
-        return Response([public_connection(c) for c in MetaConnection.objects.filter(brand=brand, active=True)])
+        return Response([public_connection(c) for c in MetaConnection.objects.filter(brand=brand, active=True, platform__in=['facebook', 'instagram'])])
     def post(self, request, brand_id):
         brand = brand_for(request, brand_id)
         app, _, version, redirect, key = configuration()
         nonce = secrets.token_hex(32)
         MetaSession.objects.create(nonce=nonce, user=request.user, brand=brand, expires_at=timezone.now() + timedelta(minutes=15))
         state = signing.dumps({'nonce': nonce, 'user': request.user.id}, key=key, salt='meta-connect')
-        scopes = 'pages_show_list,pages_read_engagement,pages_read_user_content,pages_manage_posts,pages_manage_engagement,instagram_basic,instagram_content_publish,instagram_manage_comments'
+        scopes = 'pages_show_list,pages_read_engagement,pages_read_user_content,pages_manage_posts,pages_manage_engagement'
+        if os.getenv('META_ENABLE_MESSENGER', 'false').lower() == 'true': scopes += ',pages_messaging'
+        if os.getenv('META_ENABLE_INSTAGRAM', 'false').lower() == 'true': scopes += ',instagram_basic,instagram_content_publish,instagram_manage_comments'
         return Response({'url': f'https://www.facebook.com/{version}/dialog/oauth?' + urlencode({'client_id': app, 'redirect_uri': redirect, 'state': state, 'scope': scopes, 'response_type': 'code'})})
 
 class MetaCallback(APIView):
@@ -102,11 +104,15 @@ class MetaCallback(APIView):
             raise MetaUnavailable()
         token = graph('GET', 'oauth/access_token', grant_type='fb_exchange_token', client_id=app, client_secret=secret, fb_exchange_token=token).get('access_token')
         if not token: raise MetaUnavailable()
+        granted = graph('GET', 'me/permissions', token).get('data', [])
+        scopes = [x['permission'] for x in granted if x.get('status') == 'granted' and x.get('permission')]
         # Enumerate authorised Pages, retaining Page tokens rather than user tokens.
         pages = []
         after = None
         for _ in range(5):
-            params = {'fields': 'id,name,access_token,instagram_business_account{id,username}', 'limit': 100}
+            fields = 'id,name,access_token'
+            if 'instagram_basic' in scopes: fields += ',instagram_business_account{id,username}'
+            params = {'fields': fields, 'limit': 100}
             if after: params['after'] = after
             result = graph('GET', 'me/accounts', token, **params)
             pages.extend(result.get('data', []))
@@ -120,7 +126,7 @@ class MetaCallback(APIView):
                 ig = page.get('instagram_business_account') or {}
                 if ig.get('id'): targets.append(('instagram', ig['id'], ig.get('username', 'Instagram')))
                 for platform, remote_id, name in targets:
-                    c, _ = MetaConnection.objects.update_or_create(brand=brand, platform=platform, remote_id=str(remote_id), defaults={'name': name[:255], 'active': True, 'auto_reply': False, 'automation_user': None, 'reply_enabled_at': None, 'encrypted_token': Fernet(key.encode()).encrypt(page['access_token'].encode()).decode()})
+                    c, _ = MetaConnection.objects.update_or_create(brand=brand, platform=platform, remote_id=str(remote_id), defaults={'name': name[:255], 'active': True, 'auto_reply': False, 'automation_user': None, 'reply_enabled_at': None, 'scopes': scopes, 'encrypted_token': Fernet(key.encode()).encrypt(page['access_token'].encode()).decode()})
                     saved.append(public_connection(c))
         if not saved: raise ValidationError('No authorised Facebook Pages or linked Instagram professional accounts were found.')
         return Response({'accounts': saved, 'brand_id': brand.id})
@@ -128,7 +134,7 @@ class MetaCallback(APIView):
 class MetaAccount(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def delete(self, request, account_id):
-        c = get_object_or_404(MetaConnection, id=account_id)
+        c = get_object_or_404(MetaConnection, id=account_id, platform__in=['facebook', 'instagram'])
         brand_for(request, c.brand_id)
         c.active = False
         c.auto_reply = False
@@ -140,11 +146,11 @@ class MetaAccount(APIView):
 class MetaPosts(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request, account_id):
-        c = get_object_or_404(MetaConnection, id=account_id, active=True)
+        c = get_object_or_404(MetaConnection, id=account_id, active=True, platform__in=['facebook', 'instagram'])
         brand_for(request, c.brand_id)
         return Response(list(MetaPublication.objects.filter(connection=c).order_by('-created_at').values('id', 'caption', 'status', 'remote_id', 'created_at', 'scheduled_at')[:100]))
     def post(self, request, account_id):
-        c = get_object_or_404(MetaConnection, id=account_id, active=True)
+        c = get_object_or_404(MetaConnection, id=account_id, active=True, platform__in=['facebook', 'instagram'])
         brand_for(request, c.brand_id)
         caption = request.data.get('caption', '')
         image = request.data.get('image_url', '')
@@ -155,7 +161,8 @@ class MetaPosts(APIView):
         try: request_id = uuid.UUID(str(request.data.get('request_id')))
         except ValueError: raise ValidationError('A valid publication request ID is required.') from None
         scheduled = request.data.get('scheduled_at')
-        when = parse_datetime(scheduled) if isinstance(scheduled, str) else None
+        try: when = parse_datetime(scheduled) if isinstance(scheduled, str) else None
+        except ValueError: raise ValidationError('Choose a valid scheduled date and time.') from None
         if scheduled and (not when or timezone.is_naive(when) or when <= timezone.now()):
             raise ValidationError('Choose a future scheduled time with a timezone.')
         access_token(c)
@@ -164,7 +171,7 @@ class MetaPosts(APIView):
             MetaConnection.objects.select_for_update().get(id=c.id)
             post, created = MetaPublication.objects.get_or_create(request_id=request_id, defaults={'connection': c, 'caption': caption, 'image_url': image, 'scheduled_at': when, 'status': 'scheduled' if when else 'sending', 'requested_by': request.user})
             if not created:
-                if post.connection_id != c.id: raise ValidationError('Publication request ID already used.')
+                if post.connection_id != c.id or post.caption != caption or post.image_url != image or post.scheduled_at != when: raise ValidationError('This publish request ID belongs to another approved payload. Start a new draft.')
                 return Response({'id': post.id, 'status': post.status, 'remote_id': post.remote_id})
         if post.status == 'sending': send_publication(post)
         return Response({'id': post.id, 'status': post.status, 'remote_id': post.remote_id}, status=201)
@@ -172,13 +179,13 @@ class MetaPosts(APIView):
 class MetaComments(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request, post_id):
-        p = get_object_or_404(MetaPublication, id=post_id, status='published', connection__active=True)
+        p = get_object_or_404(MetaPublication, id=post_id, status='published', connection__active=True, connection__platform__in=['facebook', 'instagram'])
         brand_for(request, p.connection.brand_id)
         fields = 'id,message,created_time' if p.connection.platform == 'facebook' else 'id,text,timestamp'
         data = graph('GET', p.remote_id + '/comments', access_token(p.connection), fields=fields, limit=50)
         return Response([{'id': x['id'], 'text': x.get('message', x.get('text', ''))} for x in data.get('data', [])])
     def post(self, request, post_id):
-        p = get_object_or_404(MetaPublication, id=post_id, status='published', connection__active=True)
+        p = get_object_or_404(MetaPublication, id=post_id, status='published', connection__active=True, connection__platform__in=['facebook', 'instagram'])
         brand_for(request, p.connection.brand_id)
         text = request.data.get('text', '')
         if request.data.get('confirm') is not True or not isinstance(text, str) or not text.strip() or len(text) > 2000:
@@ -211,6 +218,9 @@ class MetaComments(APIView):
 
 def send_publication(post):
     c = post.connection
+    if c.platform == 'tiktok':
+        from .tiktok_api import send_tiktok
+        return send_tiktok(post)
     caption, image = post.caption, post.image_url
     try:
         c.refresh_from_db()

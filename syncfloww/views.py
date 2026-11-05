@@ -40,11 +40,14 @@ import os
 def health(request):
     """Release/readiness signal without exposing records or server settings."""
     try:
-        from social.models import BrandMessage, BrandLead, BrandIdea
+        from social.models import BrandMessage, BrandLead, BrandIdea, MetaConnection, MetaPublication, InboxSend
         # Check that the deployed database has both new tables.
         BrandMessage.objects.values('id').first()
         BrandLead.objects.values('id').first()
         BrandIdea.objects.values('id').first()
+        MetaConnection.objects.values('scopes', 'token_expires_at').first()
+        MetaPublication.objects.values('provider_publish_id', 'last_status_checked_at').first()
+        InboxSend.objects.values('id').first()
         from ai_agents.models import AIScript
         AIScript.objects.values('review_status').first()
         return JsonResponse({'status': 'ready', 'release': os.getenv('VERCEL_GIT_COMMIT_SHA', '')})

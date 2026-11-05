@@ -11,6 +11,10 @@ from .views import (
 from .meta_automation import MetaAutomation, MetaCancelPost, MetaCron
 from .meta_api import MetaAccounts, MetaCallback, MetaAccount, MetaPosts, MetaComments
 
+from .tiktok_api import TikTokAccounts, TikTokCallback, TikTokCreator, TikTokDisconnect, TikTokPosts, TikTokStatus, TikTokWorker
+from .inbox_api import FacebookInbox
+from .readiness import SocialReadiness
+
 router = DefaultRouter()
 router.register('brands', BrandViewSet, basename='brand')
 router.register('brand-profiles', BrandProfileViewSet, basename='brandprofile')
@@ -22,6 +26,15 @@ router.register('accounts', SocialAccountViewSet, basename='socialaccount')
 router.register('credentials', PlatformCredentialViewSet, basename='platformcredential')
 
 urlpatterns = [
+    path('readiness/', SocialReadiness.as_view()),
+    path('meta/accounts/<int:account_id>/inbox/', FacebookInbox.as_view()),
+    path('tiktok/brands/<int:brand_id>/accounts/', TikTokAccounts.as_view()),
+    path('tiktok/callback/', TikTokCallback.as_view()),
+    path('tiktok/accounts/<int:account_id>/worker/', TikTokWorker.as_view()),
+    path('tiktok/accounts/<int:account_id>/creator/', TikTokCreator.as_view()),
+    path('tiktok/accounts/<int:account_id>/', TikTokDisconnect.as_view()),
+    path('tiktok/accounts/<int:account_id>/posts/', TikTokPosts.as_view()),
+    path('tiktok/posts/<int:post_id>/status/', TikTokStatus.as_view()),
     path('meta/cron/', MetaCron.as_view()),
     path('meta/accounts/<int:account_id>/automation/', MetaAutomation.as_view()),
     path('meta/posts/<int:post_id>/cancel/', MetaCancelPost.as_view()),

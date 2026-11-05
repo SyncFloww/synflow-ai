@@ -26,12 +26,13 @@ def allowed(user, brand):
 class MetaAutomation(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request, account_id):
-        c = get_object_or_404(MetaConnection, id=account_id, active=True)
+        c = get_object_or_404(MetaConnection, id=account_id, active=True, platform__in=['facebook', 'instagram'])
         brand_for(request, c.brand_id)
         return Response({'auto_reply': c.auto_reply, 'history': list(MetaReply.objects.filter(publication__connection=c).order_by('-created_at').values('id', 'publication_id', 'comment_text', 'reply', 'status', 'remote_id')[:100])})
     def patch(self, request, account_id):
-        c = get_object_or_404(MetaConnection, id=account_id, active=True)
+        c = get_object_or_404(MetaConnection, id=account_id, active=True, platform__in=['facebook', 'instagram'])
         brand_for(request, c.brand_id)
+        if c.platform not in ('facebook', 'instagram'): raise ValidationError('Automatic replies require a supported platform business connection.')
         enabled = request.data.get('auto_reply')
         if not isinstance(enabled, bool): raise ValidationError('Choose whether automatic replies are enabled.')
         if enabled and request.data.get('confirm') is not True: raise ValidationError('Confirm that AI may send public replies without individual review.')
@@ -41,7 +42,7 @@ class MetaAutomation(APIView):
         c.save()
         return Response(public_connection(c))
     def post(self, request, account_id):
-        c = get_object_or_404(MetaConnection, id=account_id, active=True)
+        c = get_object_or_404(MetaConnection, id=account_id, active=True, platform__in=['facebook', 'instagram'])
         brand_for(request, c.brand_id)
         return Response(run_worker(c.id))
 
@@ -85,11 +86,16 @@ def run_worker(account_id=None):
 def process_one(account_id):
     now = timezone.now()
     # A crash after a send must be reviewed, not automatically sent again.
-    MetaPublication.objects.filter(status='sending', created_at__lt=now - timedelta(minutes=10)).update(status='uncertain')
-    MetaReply.objects.filter(status='generating', updated_at__lt=now - timedelta(minutes=10)).update(status='needs_review')
-    MetaReply.objects.filter(status='sending', updated_at__lt=now - timedelta(minutes=10)).update(status='uncertain')
+    publications = MetaPublication.objects.all()
+    replies = MetaReply.objects.all()
+    if account_id:
+        publications = publications.filter(connection_id=account_id)
+        replies = replies.filter(publication__connection_id=account_id)
+    publications.filter(status='sending', created_at__lt=now - timedelta(minutes=10)).update(status='uncertain')
+    replies.filter(status='generating', updated_at__lt=now - timedelta(minutes=10)).update(status='needs_review')
+    replies.filter(status='sending', updated_at__lt=now - timedelta(minutes=10)).update(status='uncertain')
     with transaction.atomic():
-        due = MetaPublication.objects.select_for_update().filter(status='scheduled', scheduled_at__lte=now).select_related('connection__brand__workspace', 'requested_by').order_by('scheduled_at')
+        due = MetaPublication.objects.select_for_update(of=('self',)).filter(status='scheduled', scheduled_at__lte=now).select_related('connection__brand__workspace', 'requested_by').order_by('scheduled_at')
         if account_id: due = due.filter(connection_id=account_id)
         p = due.first()
         if p:
@@ -101,9 +107,24 @@ def process_one(account_id):
             p.save(update_fields=['status'])
     if p:
         try: send_publication(p)
-        except APIException: return {'status': 'uncertain', 'post_id': p.id}
+        except APIException:
+            p.refresh_from_db(fields=['status'])
+            return {'status': p.status, 'post_id': p.id}
         return {'status': p.status, 'post_id': p.id}
-    candidates = MetaConnection.objects.filter(active=True, auto_reply=True).select_related('brand__workspace', 'automation_user').order_by(F('last_checked_at').asc(nulls_first=True), 'id')
+    pending = MetaPublication.objects.filter(connection__platform='tiktok', status='processing').select_related('connection__brand__workspace', 'requested_by').order_by(F('last_status_checked_at').asc(nulls_first=True), 'id')
+    if account_id: pending = pending.filter(connection_id=account_id)
+    processing = pending.first()
+    if processing:
+        if not processing.connection.active or not allowed(processing.requested_by, processing.connection.brand):
+            processing.status = 'needs_review'
+            processing.save(update_fields=['status'])
+            return {'status': 'review_access', 'post_id': processing.id}
+        # Rotate through processing posts even when a particular provider check fails.
+        MetaPublication.objects.filter(id=processing.id).update(last_status_checked_at=timezone.now())
+        from .tiktok_api import refresh_status
+        try: return refresh_status(processing)
+        except APIException: return {'status': 'status_check_unavailable', 'post_id': processing.id}
+    candidates = MetaConnection.objects.filter(active=True, auto_reply=True, platform__in=['facebook', 'instagram']).select_related('brand__workspace', 'automation_user').order_by(F('last_checked_at').asc(nulls_first=True), 'id')
     if account_id: candidates = candidates.filter(id=account_id)
     c = candidates.first()
     if not c: return {'status': 'idle'}

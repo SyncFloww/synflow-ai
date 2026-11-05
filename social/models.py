@@ -314,4 +314,4 @@ class BrandIdea(models.Model):
         ordering = ['-updated_at', '-id']
 
 # Registered separately to keep the existing social adapters isolated.
-from .meta_models import MetaSession, MetaConnection, MetaPublication, MetaReply, MetaWorkerLease
+from .meta_models import MetaSession, MetaConnection, MetaPublication, MetaReply, MetaWorkerLease, InboxSend
